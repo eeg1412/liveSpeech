@@ -1,5 +1,6 @@
 # liveSpeech
-OBS用语音识别 —— 基于chrome语音适别开发  
+OBS用语音识别 —— 基于chrome语音识别开发  
+解决各种情况下不能语音，但是需要和观众互动的需求  
 效果预览：    
 ![预览](https://user-images.githubusercontent.com/27753071/127765918-435d53b0-05d1-44f7-a3ef-aba828899807.png)
 
