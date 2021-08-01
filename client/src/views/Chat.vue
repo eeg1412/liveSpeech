@@ -131,7 +131,7 @@ export default {
   background-color: rgb(254 244 255 / 80%);
   margin-left: 12px;
   min-height: 45px;
-  font-size: 18px;
+  font-size: 28px;
   float: right;
   box-sizing: border-box;
   opacity: 1;
