@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "@alicloud/pop-core": "^1.7.10",
     "chalk": "^4.1.0",
     "connect-history-api-fallback": "^1.6.0",
     "cookie-parser": "~1.4.4",

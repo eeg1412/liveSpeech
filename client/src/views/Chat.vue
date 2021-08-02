@@ -32,26 +32,46 @@ export default {
       chatShow: false,
       chatShowTimer: null,
       socket: null,
+      isSpeech:false,
       avatar: 'https://i.loli.net/2021/08/01/SFHndyel1UJx6wL.png',
+      cloudSel:"aliyun",
+      appkey:"",
+      AccessToken:"",
+      voice:"xiaoyun",
     }
   },
   computed: {},
   watch: {},
   methods: {
+    playVoice(){
+      if(this.isSpeech){
+        const url = `https://nls-gateway.cn-shanghai.aliyuncs.com/stream/v1/tts?appkey=${this.appkey}&token=${this.AccessToken}&text=${encodeURI(this.chat)}&format=mp3&sample_rate=16000&voice=${this.voice}`
+        const speech = new Audio(url);
+        speech.play();  // 再生
+      }
+    },
     toSocket() {
       this.socket = io.connect('/socketchat')
       this.socket.on('msg', (data) => {
         console.log(data)
         this.chat = data.message
-        this.avatar =
-          data.avatar || 'https://i.loli.net/2021/08/01/SFHndyel1UJx6wL.png'
         this.$nextTick(() => {
           this.chatShow = true
+          this.playVoice()
         })
         clearTimeout(this.chatShowTimer)
         this.chatShowTimer = setTimeout(() => {
           this.chatShow = false
         }, this.chat.length * 1000)
+      })
+      this.socket.on('getSettingData', (data) => {
+        console.log(data)
+        this.isSpeech = data.isSpeech ? true : false
+        this.avatar = data.avatar || "https://i.loli.net/2021/08/01/SFHndyel1UJx6wL.png"
+        this.cloudSel = data.cloudSel || "aliyun"
+        this.appkey = data.appkey || ""
+        this.AccessToken = data.AccessToken || ""
+        this.voice = data.voice || "xiaoyun"
       })
       this.socket.on('connect', () => {
         console.log('已连接')

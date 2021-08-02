@@ -4,7 +4,14 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var history = require('connect-history-api-fallback');
-
+global.myAppConfig = {
+    isSpeech:false,
+    avatar:"",
+    cloudSel:"aliyun",
+    appkey:"",
+    AccessToken:"",
+    voice:"xiaoyun",
+}
 var apiRouter = require('./routes/api');
 
 var app = express();
