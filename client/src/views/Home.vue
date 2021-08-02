@@ -104,6 +104,10 @@ export default {
           value: 'googleNiang',
         },
         {
+          name: '谷歌云',
+          value: 'googleCloud',
+        },
+        {
           name: '阿里云智能语音交互',
           value: 'aliyun',
         },

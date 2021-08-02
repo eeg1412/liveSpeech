@@ -57,6 +57,9 @@ export default {
           case 'googleNiang':
             url = voiceUrl
             break
+          case 'googleCloud':
+            url = voiceUrl
+            break
           default:
             break
         }
