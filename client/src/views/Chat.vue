@@ -45,9 +45,20 @@ export default {
   methods: {
     playVoice(){
       if(this.isSpeech){
-        const url = `https://nls-gateway.cn-shanghai.aliyuncs.com/stream/v1/tts?appkey=${this.appkey}&token=${this.AccessToken}&text=${encodeURI(this.chat)}&format=mp3&sample_rate=16000&voice=${this.voice}`
-        const speech = new Audio(url);
-        speech.play();  // 再生
+        let url = ""
+        switch (this.cloudSel) {
+          case "aliyun":
+            url = `https://nls-gateway.cn-shanghai.aliyuncs.com/stream/v1/tts?appkey=${this.appkey}&token=${this.AccessToken}&text=${encodeURI(this.chat)}&format=mp3&sample_rate=16000&voice=${this.voice}`
+            break;
+        
+          default:
+            break;
+        }
+        if(url){
+          const speech = new Audio(url);
+          speech.play(); 
+        }
+
       }
     },
     toSocket() {
