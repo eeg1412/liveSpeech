@@ -187,15 +187,18 @@ export default {
       rec.onresult = (e) => {
         console.log('on result')
         console.log(e)
-        for (var i = e.resultIndex; i < e.results.length; i++) {
-          if (!e.results[i].isFinal) continue
+        // for (var i = e.resultIndex; i < e.results.length; i++) {
+        //   if (!e.results[i].isFinal) continue
 
-          const { transcript } = e.results[i][0]
-          console.log(`Recognised: ${transcript}`)
-          this.message = transcript
-          this.send(this.message)
-        }
-
+        //   const { transcript } = e.results[i][0]
+        //   console.log(`Recognised: ${transcript}`)
+        //   this.message = transcript
+        //   this.send(this.message)
+        // }
+        const { transcript } = e.results[e.resultIndex][0]
+        console.log(`Recognised: ${transcript}`)
+        this.message = transcript
+        this.send(this.message)
         // rec.stop()
       }
 
