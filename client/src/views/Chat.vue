@@ -32,33 +32,39 @@ export default {
       chatShow: false,
       chatShowTimer: null,
       socket: null,
-      isSpeech:false,
+      isSpeech: false,
       avatar: 'https://i.loli.net/2021/08/01/SFHndyel1UJx6wL.png',
-      cloudSel:"aliyun",
-      appkey:"",
-      AccessToken:"",
-      voice:"xiaoyun",
+      cloudSel: 'googleNiang',
+      appkey: '',
+      AccessToken: '',
+      voice: 'xiaoyun',
     }
   },
   computed: {},
   watch: {},
   methods: {
-    playVoice(){
-      if(this.isSpeech){
-        let url = ""
+    playVoice(voiceUrl) {
+      if (this.isSpeech) {
+        let url = ''
         switch (this.cloudSel) {
-          case "aliyun":
-            url = `https://nls-gateway.cn-shanghai.aliyuncs.com/stream/v1/tts?appkey=${this.appkey}&token=${this.AccessToken}&text=${encodeURI(this.chat)}&format=mp3&sample_rate=16000&voice=${this.voice}`
-            break;
-        
+          case 'aliyun':
+            url = `https://nls-gateway.cn-shanghai.aliyuncs.com/stream/v1/tts?appkey=${
+              this.appkey
+            }&token=${this.AccessToken}&text=${encodeURI(
+              this.chat
+            )}&format=mp3&sample_rate=16000&voice=${this.voice}`
+            break
+          case 'googleNiang':
+            url = voiceUrl
+            break
           default:
-            break;
+            break
         }
-        if(url){
-          const speech = new Audio(url);
-          speech.play(); 
+        if (url) {
+          const speech = new Audio(url)
+          speech.load()
+          speech.play()
         }
-
       }
     },
     toSocket() {
@@ -68,7 +74,7 @@ export default {
         this.chat = data.message
         this.$nextTick(() => {
           this.chatShow = true
-          this.playVoice()
+          this.playVoice(data.voiceUrl)
         })
         clearTimeout(this.chatShowTimer)
         this.chatShowTimer = setTimeout(() => {
@@ -78,11 +84,12 @@ export default {
       this.socket.on('getSettingData', (data) => {
         console.log(data)
         this.isSpeech = data.isSpeech ? true : false
-        this.avatar = data.avatar || "https://i.loli.net/2021/08/01/SFHndyel1UJx6wL.png"
-        this.cloudSel = data.cloudSel || "aliyun"
-        this.appkey = data.appkey || ""
-        this.AccessToken = data.AccessToken || ""
-        this.voice = data.voice || "xiaoyun"
+        this.avatar =
+          data.avatar || 'https://i.loli.net/2021/08/01/SFHndyel1UJx6wL.png'
+        this.cloudSel = data.cloudSel || 'googleNiang'
+        this.appkey = data.appkey || ''
+        this.AccessToken = data.AccessToken || ''
+        this.voice = data.voice || 'xiaoyun'
       })
       this.socket.on('connect', () => {
         console.log('已连接')
