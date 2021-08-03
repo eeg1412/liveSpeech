@@ -15,15 +15,15 @@ async function quickStart(message) {
   const request = {
     audioConfig: {
       audioEncoding: 'MP3',
-      pitch: 0,
-      speakingRate: 1,
+      pitch: Number(global.myAppConfig.googlePitch),
+      speakingRate: Number(global.myAppConfig.googleSpeakingRate),
     },
     input: {
       text: text,
     },
     voice: {
       languageCode: 'cmn-CN',
-      name: 'cmn-CN-Wavenet-A',
+      name: global.myAppConfig.googleVoice || 'cmn-CN-Wavenet-A',
     },
   }
 

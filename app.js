@@ -11,6 +11,9 @@ global.myAppConfig = {
   appkey: '',
   AccessToken: '',
   voice: 'xiaoyun',
+  googleVoice: 'cmn-CN-Wavenet-A',
+  googlePitch: 0,
+  googleSpeakingRate: 1,
 }
 var apiRouter = require('./routes/api')
 

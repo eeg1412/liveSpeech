@@ -91,6 +91,54 @@
             />
           </div>
         </div>
+        <div v-show="cloudSel === 'googleCloud'">
+          <div class="pb15">
+            <div class="pb10">
+              声源（参考<a
+                href="https://cloud.google.com/text-to-speech"
+                target="_blank"
+                >谷歌云文档</a
+              >）：
+            </div>
+            <div>
+              <InputText class="input-text-full" v-model="googleVoice" />
+            </div>
+          </div>
+          <div class="pb15">
+            <div class="pb10">
+              语速：
+            </div>
+            <div>
+              <InputNumber
+                v-model.number="googleSpeakingRate"
+                showButtons
+                buttonLayout="horizontal"
+                :step="0.01"
+                incrementButtonIcon="pi pi-plus"
+                decrementButtonIcon="pi pi-minus"
+                :min="0.25"
+                :max="4"
+              />
+            </div>
+          </div>
+          <div class="pb15">
+            <div class="pb10">
+              语调：
+            </div>
+            <div>
+              <InputNumber
+                v-model.number="googlePitch"
+                showButtons
+                buttonLayout="horizontal"
+                :step="1"
+                incrementButtonIcon="pi pi-plus"
+                decrementButtonIcon="pi pi-minus"
+                :min="-20"
+                :max="20"
+              />
+            </div>
+          </div>
+        </div>
         <div v-show="cloudSel === 'aliyun'">
           <div class="pb15">
             <div class="pb10">APPKEY：</div>
@@ -149,6 +197,8 @@ import SelectButton from 'primevue/selectbutton'
 import Toast from 'primevue/toast'
 import RadioButton from 'primevue/radiobutton'
 import useClipboard from 'vue-clipboard3'
+import InputNumber from 'primevue/inputnumber'
+// import Slider from 'primevue/slider'
 
 export default {
   name: 'Home',
@@ -161,6 +211,8 @@ export default {
     SelectButton,
     Toast,
     RadioButton,
+    InputNumber,
+    // Slider,
   },
   data() {
     return {
@@ -172,11 +224,11 @@ export default {
       getType: '0',
       cloudList: [
         {
-          name: '谷歌娘',
+          name: '谷歌娘(仅海外)',
           value: 'googleNiang',
         },
         {
-          name: '谷歌云',
+          name: '谷歌云(仅海外)',
           value: 'googleCloud',
         },
         {
@@ -190,6 +242,9 @@ export default {
       appkey: '',
       AccessToken: '',
       voice: 'xiaoyun',
+      googleVoice: 'cmn-CN-Wavenet-A',
+      googlePitch: 0,
+      googleSpeakingRate: 1,
     }
   },
   computed: {},
@@ -226,6 +281,9 @@ export default {
         appkey: this.appkey,
         AccessToken: this.AccessToken,
         voice: this.voice,
+        googleVoice: this.googleVoice,
+        googlePitch: this.googlePitch,
+        googleSpeakingRate: this.googleSpeakingRate,
       }
       this.socket.emit('settingData', settingData)
       this.$toast.add({
@@ -255,6 +313,9 @@ export default {
           appkey: this.appkey,
           AccessToken: this.AccessToken,
           voice: this.voice,
+          googleVoice: this.googleVoice,
+          googlePitch: this.googlePitch,
+          googleSpeakingRate: this.googleSpeakingRate,
         }
         this.socket.emit('settingData', settingData)
         this.socket.on('getControlSpeech', (data) => {
@@ -370,6 +431,15 @@ export default {
         this.appkey = settingData.appkey || ''
         this.AccessToken = settingData.AccessToken || ''
         this.voice = settingData.voice || 'xiaoyun'
+        this.googleVoice = settingData.googleVoice || 'cmn-CN-Wavenet-A'
+        this.googlePitch = Number.isNaN(Number(settingData.googlePitch))
+          ? 0
+          : Number(settingData.googlePitch)
+        this.googleSpeakingRate = Number.isNaN(
+          Number(settingData.googleSpeakingRate)
+        )
+          ? 1
+          : Number(settingData.googleSpeakingRate)
       }
       this.avatarPre = this.avatar
       this.toSocket()

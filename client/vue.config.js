@@ -1,4 +1,10 @@
 module.exports = {
+  pages: {
+    index: {
+      entry: 'src/main.js',
+      title: '直播语音转换',
+    },
+  },
   devServer: {
     https: true,
     proxy: {
