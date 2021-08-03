@@ -3,13 +3,63 @@
   <div class="home">
     <!-- <div>头像URL：<input v-model="avatar" @blur="changeAvatar" /></div> -->
     <Panel header="语音获取" class="mb15">
+      <div class="pb15">
+        <div class="pb10">捕获模式：</div>
+        <div class="flex">
+          <div class="mr10">
+            <label
+              ><RadioButton
+                name="getType"
+                value="1"
+                v-model="getType"
+                @change="getTypeChange"
+              />
+              自由捕获</label
+            >
+          </div>
+          <div class="mr10">
+            <label
+              ><RadioButton
+                name="getType"
+                value="2"
+                v-model="getType"
+                @change="getTypeChange"
+              />
+              按键捕获</label
+            >
+          </div>
+          <div class="mr10">
+            <label
+              ><RadioButton
+                name="getType"
+                value="0"
+                v-model="getType"
+                @change="getTypeChange"
+              />
+              禁止捕获</label
+            >
+          </div>
+        </div>
+        <div v-show="getType === '2'" class="pb10 pt10">
+          <Button
+            label="复制控制器URL"
+            class="p-button-raised p-button-text p-button-sm p-button-mr10"
+            @click="copyControlUrl('speechcontrol')"
+          />
+          <Button
+            label="打开控制器"
+            class="p-button-raised p-button-text p-button-sm"
+            @click="openControlUrl('speechcontrol')"
+          />
+        </div>
+      </div>
       <div class="pb10">状态：{{ status }}</div>
       <div class="p-inputgroup">
         <InputText placeholder="捕获语音" v-model="message" />
         <Button label="手动发送" @click="sendByUser" />
       </div>
     </Panel>
-    <Panel header="设置">
+    <Panel header="设置" class="mb15">
       <div class="pb15">
         <div class="pb10">
           头像URL：<Avatar shape="circle" :image="avatarPre" v-if="avatarPre" />
@@ -64,7 +114,24 @@
           </div>
         </div>
       </div>
-      <Button label="发送设置" @click="saveSetting" />
+      <Button label="发送设置" class="p-button-sm" @click="saveSetting" />
+    </Panel>
+    <Panel header="获取地址">
+      <div class="pb15">
+        <div class="pb10">气泡聊天窗：</div>
+        <div>
+          <Button
+            label="复制聊天窗URL"
+            class="p-button-raised p-button-text p-button-sm p-button-mr10"
+            @click="copyControlUrl('chat')"
+          />
+          <Button
+            label="打开聊天窗"
+            class="p-button-raised p-button-text p-button-sm"
+            @click="openControlUrl('chat')"
+          />
+        </div>
+      </div>
     </Panel>
     <Toast position="top-center" />
   </div>
@@ -80,9 +147,11 @@ import InputSwitch from 'primevue/inputswitch'
 import SelectButton from 'primevue/selectbutton'
 // import Listbox from 'primevue/listbox';
 import Toast from 'primevue/toast'
+import RadioButton from 'primevue/radiobutton'
+import useClipboard from 'vue-clipboard3'
 
 export default {
-  name: '',
+  name: 'Home',
   components: {
     InputText,
     Button,
@@ -91,13 +160,16 @@ export default {
     InputSwitch,
     SelectButton,
     Toast,
+    RadioButton,
   },
   data() {
     return {
+      rec: null,
       message: '',
       avatarPre: '',
       socket: null,
-      status: '初始化中',
+      status: '未启动',
+      getType: '0',
       cloudList: [
         {
           name: '谷歌娘',
@@ -123,6 +195,29 @@ export default {
   computed: {},
   watch: {},
   methods: {
+    openControlUrl(url) {
+      window.open(`${window.location.origin}/${url}`, 'target')
+    },
+    async copyControlUrl(url) {
+      const { toClipboard } = useClipboard()
+
+      try {
+        await toClipboard(`${window.location.origin}/${url}`)
+        this.$toast.add({
+          severity: 'success',
+          summary: '成功',
+          detail: '复制成功',
+          life: 3000,
+        })
+      } catch (e) {
+        this.$toast.add({
+          severity: 'errro',
+          summary: '失败',
+          detail: '复制失败',
+          life: 3000,
+        })
+      }
+    },
     saveSetting() {
       const settingData = {
         isSpeech: this.isSpeech,
@@ -162,6 +257,15 @@ export default {
           voice: this.voice,
         }
         this.socket.emit('settingData', settingData)
+        this.socket.on('getControlSpeech', (data) => {
+          if (this.getType === '2') {
+            if (data) {
+              this.speechStart()
+            } else {
+              this.speechStop()
+            }
+          }
+        })
       })
       this.socket.on('disconnect', () => {
         console.log('已断开')
@@ -170,20 +274,31 @@ export default {
     send(message) {
       this.socket.emit('send', { message: message })
     },
-    init() {
-      const settingDataStr = localStorage.getItem('liveSpeechSetting') || ''
-      if (settingDataStr) {
-        const settingData = JSON.parse(settingDataStr)
-        this.isSpeech = settingData.isSpeech ? true : false
-        this.avatar = settingData.avatar || ''
-        this.cloudSel = settingData.cloudSel || 'googleNiang'
-        this.appkey = settingData.appkey || ''
-        this.AccessToken = settingData.AccessToken || ''
-        this.voice = settingData.voice || 'xiaoyun'
+    getTypeChange() {
+      switch (this.getType) {
+        case '0':
+          this.speechStop()
+          break
+        case '1':
+          this.speechStart()
+          break
+        case '2':
+          this.speechStop()
+          break
+
+        default:
+          break
       }
-      this.avatarPre = this.avatar
-      this.toSocket()
+    },
+    speechStart() {
+      this.rec.start()
+    },
+    speechStop() {
+      this.rec.stop()
+    },
+    initSpeech() {
       const rec = new window.webkitSpeechRecognition()
+      this.rec = rec
       rec.continuous = true
       rec.interimResults = false
       rec.lang = 'cmn-Hans-CN'
@@ -216,7 +331,11 @@ export default {
       }
       rec.onend = () => {
         console.log('on end')
-        rec.start()
+        if (this.getType === '1') {
+          rec.start()
+        } else {
+          this.status = '未启动'
+        }
       }
 
       rec.onspeechstart = () => {
@@ -240,8 +359,21 @@ export default {
       rec.onaudioend = () => {
         console.log('on audio end')
       }
-
-      rec.start()
+    },
+    init() {
+      const settingDataStr = localStorage.getItem('liveSpeechSetting') || ''
+      if (settingDataStr) {
+        const settingData = JSON.parse(settingDataStr)
+        this.isSpeech = settingData.isSpeech ? true : false
+        this.avatar = settingData.avatar || ''
+        this.cloudSel = settingData.cloudSel || 'googleNiang'
+        this.appkey = settingData.appkey || ''
+        this.AccessToken = settingData.AccessToken || ''
+        this.voice = settingData.voice || 'xiaoyun'
+      }
+      this.avatarPre = this.avatar
+      this.toSocket()
+      this.initSpeech()
     },
   },
   created() {},
@@ -263,5 +395,8 @@ export default {
 }
 .input-text-full {
   width: 100%;
+}
+.p-button.p-button-mr10 {
+  margin-right: 10px;
 }
 </style>
