@@ -20,6 +20,12 @@ const routes = [
         /* webpackChunkName: "SpeechControl" */ '../views/SpeechControl.vue'
       ),
   },
+  {
+    path: '/live2d',
+    name: 'Live2d',
+    component: () =>
+      import(/* webpackChunkName: "Live2d" */ '../views/Live2d.vue'),
+  },
 ]
 
 const router = createRouter({
