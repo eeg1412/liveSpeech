@@ -80,6 +80,34 @@
           </div>
         </div>
         <div class="pb15">
+          <div class="pb10">
+            live2d模型：
+          </div>
+
+          <div class="flex">
+            <div class="mr10">
+              <label
+                ><RadioButton
+                  name="selModel"
+                  value="LiveroiD_A-Y01"
+                  v-model="selModel"
+                />
+                LiveroiD_A-Y01</label
+              >
+            </div>
+            <div class="mr10">
+              <label
+                ><RadioButton
+                  name="selModel"
+                  value="LiveroiD_A-Y02"
+                  v-model="selModel"
+                />
+                LiveroiD_A-Y02</label
+              >
+            </div>
+          </div>
+        </div>
+        <div class="pb15">
           <div class="pb10">是否语音播报：</div>
 
           <div><InputSwitch v-model="isSpeech" /></div>
@@ -323,6 +351,7 @@ export default {
       azureKey: '',
       azureRegion: '',
       azureVoice: 'zh-CN-XiaoxiaoNeural',
+      selModel: 'LiveroiD_A-Y01',
     }
   },
   computed: {},
@@ -375,6 +404,7 @@ export default {
         azureKey: this.azureKey,
         azureRegion: this.azureRegion,
         azureVoice: this.azureVoice,
+        selModel: this.selModel,
       }
       this.socket.emit('settingData', settingData)
       this.$toast.add({
@@ -411,6 +441,7 @@ export default {
           azureKey: this.azureKey,
           azureRegion: this.azureRegion,
           azureVoice: this.azureVoice,
+          selModel: this.selModel,
         }
         this.socket.emit('settingData', settingData)
         this.socket.on('getControlSpeech', (data) => {
@@ -563,6 +594,7 @@ export default {
         this.azureKey = settingData.azureKey || ''
         this.azureRegion = settingData.azureRegion || ''
         this.azureVoice = settingData.azureVoice || 'zh-CN-XiaoxiaoNeural'
+        this.selModel = settingData.selModel || 'LiveroiD_A-Y01'
       }
       this.avatarPre = this.avatar
       this.toSocket()

@@ -24,6 +24,8 @@ export default {
       sleepTimer: null,
       chatTimer: null,
       mode: null,
+      model: null,
+      app: null,
       chat: '',
       chatShow: false,
       chatShowTimer: null,
@@ -33,7 +35,7 @@ export default {
       appkey: '',
       AccessToken: '',
       voice: 'xiaoyun',
-      selModel: 'LiveroiD_A-Y01',
+      selModel: '',
       modelList: {
         'LiveroiD_A-Y01': {
           x: 40,
@@ -52,12 +54,12 @@ export default {
           messageBorderColor: 'rgb(150 134 122)',
           url: '/live2d/LiveroiD_A-Y02/LiveroiD_A-Y02.model3.json',
           haveMotion: false,
+          app: null,
         },
       },
     }
   },
   mounted() {
-    this.live2dInit()
     this.toSocket()
     // setTimeout(() => {
     //   this.mouthOpen = false
@@ -88,6 +90,16 @@ export default {
     },
   },
   methods: {
+    destroyModel() {
+      if (this.model) {
+        this.model.destroy()
+        this.model = null
+      }
+      if (this.app) {
+        this.app.destroy()
+        this.app = null
+      }
+    },
     randomMotion() {
       this.model.internalModel.motionManager.startRandomMotion('sleep', 1)
       this.sleepTimer = setTimeout(() => {
@@ -173,6 +185,12 @@ export default {
         this.appkey = data.appkey || ''
         this.AccessToken = data.AccessToken || ''
         this.voice = data.voice || 'xiaoyun'
+        if (this.selModel !== data.selModel) {
+          this.destroyModel()
+          this.selModel = data.selModel || 'LiveroiD_A-Y01'
+          console.log(this.selModel)
+          this.live2dInit()
+        }
       })
       this.socket.on('connect', () => {
         console.log('已连接')
@@ -190,6 +208,8 @@ export default {
         height: 575,
         transparent: true,
       })
+
+      this.app = app
 
       const model = await Live2DModel.from(this.selModelData.url)
       this.model = model
@@ -213,20 +233,22 @@ export default {
       //   let mouthValue = 0
       app.ticker.add(() => {
         // model.internalModel.coreModel._model.parameters.values[4] = 0
-        if (this.mouthOpen) {
-          model.internalModel.coreModel.setParameterValueById(
-            'ParamMouthOpenY',
-            (Math.sin(performance.now() / 100) / 2 + 0.5) / 2
-          )
-          // model.internalModel.coreModel.setParameterValueById(
-          //   'ParamMouthForm',
-          //   Math.sin(performance.now() / 150) / 2 + 0.5
-          // )
-        } else {
-          model.internalModel.coreModel.setParameterValueById(
-            'ParamMouthOpenY',
-            0
-          )
+        if (this.model) {
+          if (this.mouthOpen) {
+            model.internalModel.coreModel?.setParameterValueById(
+              'ParamMouthOpenY',
+              (Math.sin(performance.now() / 100) / 2 + 0.5) / 2
+            )
+            // model.internalModel.coreModel.setParameterValueById(
+            //   'ParamMouthForm',
+            //   Math.sin(performance.now() / 150) / 2 + 0.5
+            // )
+          } else {
+            model.internalModel.coreModel?.setParameterValueById(
+              'ParamMouthOpenY',
+              0
+            )
+          }
         }
       })
       this.randomMotion()
