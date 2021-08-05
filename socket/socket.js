@@ -89,5 +89,15 @@ module.exports = (io) => {
       global.myAppConfig = data
       chat.emit('getSettingData', deleteSystemSetting(global.myAppConfig))
     })
+
+    socket.on('sendHomeStatus', (data) => {
+      chat.emit('getHomeStatus', data)
+    })
+    socket.on('wantHomeStatus', (data) => {
+      chat.emit('speechWantHomeStatus', data)
+    })
+    socket.on('sendSpeechControlStatus', (data) => {
+      chat.emit('getSpeechControlStatus', data)
+    })
   })
 }

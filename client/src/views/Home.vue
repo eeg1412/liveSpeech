@@ -326,8 +326,18 @@ export default {
     }
   },
   computed: {},
-  watch: {},
+  watch: {
+    status() {
+      this.sendHomeStatus()
+    },
+  },
   methods: {
+    sendHomeStatus() {
+      this.socket.emit('sendHomeStatus', {
+        status: this.status,
+        getType: this.getType,
+      })
+    },
     openControlUrl(url) {
       window.open(`${window.location.origin}/${url}`, '_blank')
     },
@@ -377,6 +387,7 @@ export default {
     },
     sendByUser() {
       this.send(this.message)
+      this.message = ''
     },
     changeAvatar() {
       // console.log("aa")
@@ -409,6 +420,30 @@ export default {
             } else {
               this.speechStop()
             }
+          } else if (this.getType === '1') {
+            if (!data) {
+              this.speechStop()
+            }
+          }
+        })
+        this.socket.on('speechWantHomeStatus', () => {
+          this.sendHomeStatus()
+        })
+        this.socket.on('getSpeechControlStatus', (data) => {
+          this.getType = data.getType
+          switch (this.getType) {
+            case '0':
+              this.speechStop()
+              break
+            case '1':
+              this.speechStart()
+              break
+            case '2':
+              this.speechStop()
+              break
+
+            default:
+              break
           }
         })
       })
@@ -434,6 +469,7 @@ export default {
         default:
           break
       }
+      this.sendHomeStatus()
     },
     speechStart() {
       this.rec.start()
