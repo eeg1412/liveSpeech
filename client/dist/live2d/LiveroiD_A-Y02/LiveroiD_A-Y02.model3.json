@@ -1,0 +1,31 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "LiveroiD_A-Y02.moc3",
+		"Textures": [
+			"LiveroiD_A-Y02.8192/texture_00.png"
+		],
+		"Physics": "LiveroiD_A-Y02.physics3.json",
+		"DisplayInfo": "LiveroiD_A-Y02.cdi3.json"
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": [
+				"ParamMouthOpenY",
+				"ParamMouthForm"
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": [
+				"ParamEyeROpen",
+				"ParamEyeLOpen",
+				"Param",
+				"Param14"
+			]
+		}
+	]
+}
