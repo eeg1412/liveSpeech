@@ -40,7 +40,7 @@
             >
           </div>
         </div>
-        <div v-show="getType === '2'" class="pb10 pt10">
+        <div class="pb10 pt10">
           <Button
             label="复制控制器URL"
             class="p-button-raised p-button-text p-button-sm p-button-mr10"
@@ -59,110 +59,164 @@
         <Button label="手动发送" @click="sendByUser" />
       </div>
     </Panel>
-    <Panel header="设置" class="mb15">
-      <div class="pb15">
-        <div class="pb10">
-          头像URL：<Avatar shape="circle" :image="avatarPre" v-if="avatarPre" />
-        </div>
-
-        <div>
-          <InputText
-            class="input-text-full"
-            @blur="changeAvatar"
-            placeholder="设置头像URL"
-            v-model="avatar"
-          />
-        </div>
-      </div>
-      <div class="pb15">
-        <div class="pb10">是否语音播报：</div>
-
-        <div><InputSwitch v-model="isSpeech" /></div>
-      </div>
-      <div v-show="isSpeech">
+    <Panel header="全局设置" class="mb15">
+      <form>
         <div class="pb15">
-          <div class="pb10">语音提供商：</div>
+          <div class="pb10">
+            头像URL：<Avatar
+              shape="circle"
+              :image="avatarPre"
+              v-if="avatarPre"
+            />
+          </div>
+
           <div>
-            <SelectButton
-              v-model="cloudSel"
-              :options="cloudList"
-              optionLabel="name"
-              optionValue="value"
+            <InputText
+              class="input-text-full"
+              @blur="changeAvatar"
+              placeholder="设置头像URL"
+              v-model="avatar"
             />
           </div>
         </div>
-        <div v-show="cloudSel === 'googleCloud'">
+        <div class="pb15">
+          <div class="pb10">是否语音播报：</div>
+
+          <div><InputSwitch v-model="isSpeech" /></div>
+        </div>
+        <div v-show="isSpeech">
           <div class="pb15">
-            <div class="pb10">
-              声源（参考<a
-                href="https://cloud.google.com/text-to-speech"
-                target="_blank"
-                >谷歌云文档</a
-              >）：
-            </div>
+            <div class="pb10">语音提供商：</div>
             <div>
-              <InputText class="input-text-full" v-model="googleVoice" />
-            </div>
-          </div>
-          <div class="pb15">
-            <div class="pb10">
-              语速：
-            </div>
-            <div>
-              <InputNumber
-                v-model.number="googleSpeakingRate"
-                showButtons
-                buttonLayout="horizontal"
-                :step="0.01"
-                incrementButtonIcon="pi pi-plus"
-                decrementButtonIcon="pi pi-minus"
-                :min="0.25"
-                :max="4"
+              <SelectButton
+                v-model="cloudSel"
+                :options="cloudList"
+                optionLabel="name"
+                optionValue="value"
               />
             </div>
           </div>
-          <div class="pb15">
-            <div class="pb10">
-              语调：
+          <div v-show="cloudSel === 'azure'">
+            <div class="pb15">
+              <div class="pb10">
+                声源（参考<a
+                  href="https://docs.microsoft.com/zh-cn/azure/cognitive-services/speech-service/language-support#text-to-speech"
+                  target="_blank"
+                  >Azure文档</a
+                >）：
+              </div>
+              <div>
+                <InputText class="input-text-full" v-model="azureVoice" />
+              </div>
             </div>
-            <div>
-              <InputNumber
-                v-model.number="googlePitch"
-                showButtons
-                buttonLayout="horizontal"
-                :step="1"
-                incrementButtonIcon="pi pi-plus"
-                decrementButtonIcon="pi pi-minus"
-                :min="-20"
-                :max="20"
-              />
+            <div class="pb15">
+              <div class="pb10">密钥：</div>
+              <div>
+                <Password
+                  :feedback="false"
+                  class="input-text-full"
+                  v-model="azureKey"
+                  toggleMask
+                />
+              </div>
+            </div>
+            <div class="pb15">
+              <div class="pb10">位置/区域：</div>
+              <div>
+                <Password
+                  :feedback="false"
+                  class="input-text-full"
+                  v-model="azureRegion"
+                  toggleMask
+                />
+              </div>
+            </div>
+          </div>
+          <div v-show="cloudSel === 'googleCloud'">
+            <div class="pb15">
+              <div class="pb10">
+                声源（参考<a
+                  href="https://cloud.google.com/text-to-speech"
+                  target="_blank"
+                  >谷歌云文档</a
+                >）：
+              </div>
+              <div>
+                <InputText class="input-text-full" v-model="googleVoice" />
+              </div>
+            </div>
+            <div class="pb15">
+              <div class="pb10">
+                语速：
+              </div>
+              <div>
+                <InputNumber
+                  v-model.number="googleSpeakingRate"
+                  showButtons
+                  buttonLayout="horizontal"
+                  :step="0.01"
+                  incrementButtonIcon="pi pi-plus"
+                  decrementButtonIcon="pi pi-minus"
+                  :min="0.25"
+                  :max="4"
+                />
+              </div>
+            </div>
+            <div class="pb15">
+              <div class="pb10">
+                语调：
+              </div>
+              <div>
+                <InputNumber
+                  v-model.number="googlePitch"
+                  showButtons
+                  buttonLayout="horizontal"
+                  :step="1"
+                  incrementButtonIcon="pi pi-plus"
+                  decrementButtonIcon="pi pi-minus"
+                  :min="-20"
+                  :max="20"
+                />
+              </div>
+            </div>
+          </div>
+          <div v-show="cloudSel === 'aliyun'">
+            <div class="pb15">
+              <div class="pb10">APPKEY：</div>
+              <div>
+                <Password
+                  :feedback="false"
+                  class="input-text-full"
+                  v-model="appkey"
+                  toggleMask
+                />
+              </div>
+            </div>
+            <div class="pb15">
+              <div class="pb10">AccessToken：</div>
+              <div>
+                <Password
+                  :feedback="false"
+                  class="input-text-full"
+                  v-model="AccessToken"
+                  toggleMask
+                />
+              </div>
+            </div>
+            <div class="pb15">
+              <div class="pb10">
+                声源（参考<a
+                  href="https://help.aliyun.com/document_detail/84435.htm?spm=a2c4g.11186623.2.22.28cf4a9c70HlT2#topic-2572243"
+                  target="_blank"
+                  >阿里云文档</a
+                >）：
+              </div>
+              <div><InputText class="input-text-full" v-model="voice" /></div>
             </div>
           </div>
         </div>
-        <div v-show="cloudSel === 'aliyun'">
-          <div class="pb15">
-            <div class="pb10">APPKEY：</div>
-            <div><InputText class="input-text-full" v-model="appkey" /></div>
-          </div>
-          <div class="pb15">
-            <div class="pb10">AccessToken：</div>
-            <div>
-              <InputText class="input-text-full" v-model="AccessToken" />
-            </div>
-          </div>
-          <div class="pb15">
-            <div class="pb10">
-              声源（参考<a
-                href="https://help.aliyun.com/document_detail/84435.htm?spm=a2c4g.11186623.2.22.28cf4a9c70HlT2#topic-2572243"
-                target="_blank"
-                >阿里云文档</a
-              >）：
-            </div>
-            <div><InputText class="input-text-full" v-model="voice" /></div>
-          </div>
-        </div>
-      </div>
-      <Button label="发送设置" class="p-button-sm" @click="saveSetting" />
+        <Button label="发送设置" class="p-button-sm" @click="saveSetting" />
+      </form>
     </Panel>
     <Panel header="获取地址">
       <div class="pb15">
@@ -177,6 +231,21 @@
             label="打开聊天窗"
             class="p-button-raised p-button-text p-button-sm"
             @click="openControlUrl('chat')"
+          />
+        </div>
+      </div>
+      <div class="pb15">
+        <div class="pb10">live2d：</div>
+        <div>
+          <Button
+            label="复制live2d URL"
+            class="p-button-raised p-button-text p-button-sm p-button-mr10"
+            @click="copyControlUrl('live2d')"
+          />
+          <Button
+            label="打开live2d"
+            class="p-button-raised p-button-text p-button-sm"
+            @click="openControlUrl('live2d')"
           />
         </div>
       </div>
@@ -198,6 +267,7 @@ import Toast from 'primevue/toast'
 import RadioButton from 'primevue/radiobutton'
 import useClipboard from 'vue-clipboard3'
 import InputNumber from 'primevue/inputnumber'
+import Password from 'primevue/password'
 // import Slider from 'primevue/slider'
 
 export default {
@@ -212,6 +282,7 @@ export default {
     Toast,
     RadioButton,
     InputNumber,
+    Password,
     // Slider,
   },
   data() {
@@ -235,6 +306,10 @@ export default {
           name: '阿里云智能语音交互',
           value: 'aliyun',
         },
+        {
+          name: '微软Azure',
+          value: 'azure',
+        },
       ],
       isSpeech: false,
       avatar: '',
@@ -245,13 +320,16 @@ export default {
       googleVoice: 'cmn-CN-Wavenet-A',
       googlePitch: 0,
       googleSpeakingRate: 1,
+      azureKey: '',
+      azureRegion: '',
+      azureVoice: 'zh-CN-XiaoxiaoNeural',
     }
   },
   computed: {},
   watch: {},
   methods: {
     openControlUrl(url) {
-      window.open(`${window.location.origin}/${url}`, 'target')
+      window.open(`${window.location.origin}/${url}`, '_blank')
     },
     async copyControlUrl(url) {
       const { toClipboard } = useClipboard()
@@ -284,6 +362,9 @@ export default {
         googleVoice: this.googleVoice,
         googlePitch: this.googlePitch,
         googleSpeakingRate: this.googleSpeakingRate,
+        azureKey: this.azureKey,
+        azureRegion: this.azureRegion,
+        azureVoice: this.azureVoice,
       }
       this.socket.emit('settingData', settingData)
       this.$toast.add({
@@ -316,6 +397,9 @@ export default {
           googleVoice: this.googleVoice,
           googlePitch: this.googlePitch,
           googleSpeakingRate: this.googleSpeakingRate,
+          azureKey: this.azureKey,
+          azureRegion: this.azureRegion,
+          azureVoice: this.azureVoice,
         }
         this.socket.emit('settingData', settingData)
         this.socket.on('getControlSpeech', (data) => {
@@ -440,6 +524,9 @@ export default {
         )
           ? 1
           : Number(settingData.googleSpeakingRate)
+        this.azureKey = settingData.azureKey || ''
+        this.azureRegion = settingData.azureRegion || ''
+        this.azureVoice = settingData.azureVoice || 'zh-CN-XiaoxiaoNeural'
       }
       this.avatarPre = this.avatar
       this.toSocket()
@@ -468,5 +555,8 @@ export default {
 }
 .p-button.p-button-mr10 {
   margin-right: 10px;
+}
+.input-text-full .p-password-input {
+  width: 100%;
 }
 </style>

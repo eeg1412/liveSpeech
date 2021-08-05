@@ -60,6 +60,9 @@ export default {
           case 'googleCloud':
             url = voiceUrl
             break
+          case 'azure':
+            url = voiceUrl
+            break
           default:
             break
         }

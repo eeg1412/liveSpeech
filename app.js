@@ -14,6 +14,9 @@ global.myAppConfig = {
   googleVoice: 'cmn-CN-Wavenet-A',
   googlePitch: 0,
   googleSpeakingRate: 1,
+  azureKey: '',
+  azureRegion: '',
+  azureVoice: 'zh-CN-XiaoxiaoNeural',
 }
 var apiRouter = require('./routes/api')
 
@@ -34,3 +37,4 @@ app.use(history())
 app.use('/', express.static(path.join(__dirname, 'client/dist')))
 
 module.exports = app
+console.log('已启动')

@@ -48,8 +48,6 @@ export default {
       }, 5000)
     },
     playVoice(voiceUrl) {
-      clearTimeout(this.sleepTimer)
-      this.model.internalModel.motionManager.stopAllMotions()
       if (this.isSpeech) {
         let url = ''
         switch (this.cloudSel) {
@@ -66,20 +64,38 @@ export default {
           case 'googleCloud':
             url = voiceUrl
             break
+          case 'azure':
+            url = voiceUrl
+            break
           default:
             break
         }
         if (url) {
           const speech = new Audio(url)
           speech.load()
-          speech.play()
-          this.mouthOpen = true
+          speech
+            .play()
+            .then(() => {
+              clearTimeout(this.sleepTimer)
+              this.model.internalModel.motionManager.stopAllMotions()
+              console.log(123)
+              this.$nextTick(() => {
+                this.mouthOpen = true
+              })
+            })
+            .catch(() => {
+              this.mouthOpen = false
+              this.randomMotion()
+            })
+
           speech.onended = () => {
             this.mouthOpen = false
             this.randomMotion()
           }
         }
       } else {
+        clearTimeout(this.sleepTimer)
+        this.model.internalModel.motionManager.stopAllMotions()
         clearTimeout(this.chatTimer)
         this.mouthOpen = true
         this.chatTimer = setTimeout(() => {
@@ -163,7 +179,7 @@ export default {
           model.internalModel.coreModel.setParameterValueByIndex(19, 0)
         }
       })
-
+      this.randomMotion()
       console.log(Live2DModel)
     },
   },
@@ -174,7 +190,7 @@ export default {
 .l2d_message {
   color: #fff;
   box-sizing: border-box;
-  width: 400px;
+  width: 350px;
   height: auto;
   margin: auto;
   padding: 7px;
