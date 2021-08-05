@@ -1,7 +1,9 @@
 <template>
   <div class="main">
     <transition name="fade">
-      <div class="l2d_message" v-if="chatShow">{{ chat }}</div>
+      <div class="l2d_message" :style="messageStyle" v-if="chatShow">
+        {{ chat }}
+      </div>
     </transition>
     <canvas id="canvas" width="200" height="240"></canvas>
   </div>
@@ -31,6 +33,27 @@ export default {
       appkey: '',
       AccessToken: '',
       voice: 'xiaoyun',
+      selModel: 'LiveroiD_A-Y01',
+      modelList: {
+        'LiveroiD_A-Y01': {
+          x: 40,
+          y: 0,
+          messageBottom: '560px',
+          messageBackground: 'rgb(81 88 101)',
+          messageBorderColor: 'rgb(150 134 122)',
+          url: '/live2d/LiveroiD_A-Y01/LiveroiD_A-Y01.model3.json',
+          haveMotion: false,
+        },
+        'LiveroiD_A-Y02': {
+          x: 40,
+          y: 0,
+          messageBottom: '560px',
+          messageBackground: 'rgb(81 88 101)',
+          messageBorderColor: 'rgb(150 134 122)',
+          url: '/live2d/LiveroiD_A-Y02/LiveroiD_A-Y02.model3.json',
+          haveMotion: false,
+        },
+      },
     }
   },
   mounted() {
@@ -39,6 +62,30 @@ export default {
     // setTimeout(() => {
     //   this.mouthOpen = false
     // }, 5000)
+  },
+  computed: {
+    selModelData() {
+      const data = this.modelList[this.selModel]
+      if (data) {
+        return data
+      }
+      return {
+        x: 0,
+        y: 0,
+        messageBottom: '600px',
+        messageBackground: 'rgb(81 88 101)',
+        messageBorderColor: 'rgb(150 134 122)',
+        url: '',
+        haveMotion: false,
+      }
+    },
+    messageStyle() {
+      return {
+        bottom: this.selModelData.messageBottom,
+        borderColor: this.selModelData.messageBorderColor,
+        backgroundColor: this.selModelData.messageBackground,
+      }
+    },
   },
   methods: {
     randomMotion() {
@@ -144,10 +191,10 @@ export default {
         transparent: true,
       })
 
-      const model = await Live2DModel.from(
-        '/live2d/hiyori/hiyori_pro_t10.model3.json'
-      )
+      const model = await Live2DModel.from(this.selModelData.url)
       this.model = model
+      model.x = this.selModelData.x
+      model.y = this.selModelData.y
       app.stage.addChild(model)
 
       // transforms
@@ -167,16 +214,19 @@ export default {
       app.ticker.add(() => {
         // model.internalModel.coreModel._model.parameters.values[4] = 0
         if (this.mouthOpen) {
-          model.internalModel.coreModel.setParameterValueByIndex(
-            19,
-            Math.sin(performance.now() / 100) / 2 + 0.5
+          model.internalModel.coreModel.setParameterValueById(
+            'ParamMouthOpenY',
+            (Math.sin(performance.now() / 100) / 2 + 0.5) / 2
           )
-          model.internalModel.coreModel.setParameterValueByIndex(
-            18,
-            Math.sin(performance.now() / 150) / 2 + 0.5
-          )
+          // model.internalModel.coreModel.setParameterValueById(
+          //   'ParamMouthForm',
+          //   Math.sin(performance.now() / 150) / 2 + 0.5
+          // )
         } else {
-          model.internalModel.coreModel.setParameterValueByIndex(19, 0)
+          model.internalModel.coreModel.setParameterValueById(
+            'ParamMouthOpenY',
+            0
+          )
         }
       })
       this.randomMotion()
@@ -194,11 +244,12 @@ export default {
   height: auto;
   margin: auto;
   padding: 7px;
-  bottom: 548px;
+  bottom: 600px;
   transform: translate(-50%, 0);
   left: 50%;
   text-align: center;
-  border: 2px solid rgb(150 134 122);
+  border: 2px solid;
+  border-color: rgb(150 134 122);
   border-radius: 5px;
   background-color: rgb(81 88 101);
   font-size: 24px;
