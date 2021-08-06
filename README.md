@@ -16,5 +16,5 @@ live2d模式
 2.下载nodejs  
 3.cmd在文件夹中执行npm install安装依赖  
 4.执行npm run start启动    
-5.用chrome打开http://localhost:3000/  
-6.在obs中添加浏览器，地址为http://localhost:3000/chat  
+5.用chrome打开http://localhost:3000/ 进行配置更改  
+6.在obs中添加浏览器，地址为http://localhost:3000/chat 或者 http://localhost:3000/live2d   
