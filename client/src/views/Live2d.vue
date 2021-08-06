@@ -26,6 +26,7 @@ export default {
       mode: null,
       model: null,
       app: null,
+      chatList: [],
       chat: '',
       chatShow: false,
       chatShowTimer: null,
@@ -137,7 +138,6 @@ export default {
             .then(() => {
               clearTimeout(this.sleepTimer)
               this.model.internalModel.motionManager.stopAllMotions()
-              console.log(123)
               this.$nextTick(() => {
                 this.mouthOpen = true
               })
@@ -145,12 +145,20 @@ export default {
             .catch(() => {
               this.mouthOpen = false
               this.randomMotion()
+              setTimeout(() => {
+                this.playNextChat()
+              }, this.chat.length * 300)
             })
 
           speech.onended = () => {
             this.mouthOpen = false
             this.randomMotion()
+            this.playNextChat()
           }
+        } else {
+          setTimeout(() => {
+            this.playNextChat()
+          }, this.chat.length * 300)
         }
       } else {
         clearTimeout(this.sleepTimer)
@@ -161,21 +169,56 @@ export default {
           this.mouthOpen = false
           this.randomMotion()
         }, this.chat.length * 500)
+        setTimeout(() => {
+          this.playNextChat()
+        }, this.chat.length * 300)
+      }
+    },
+    say(chat, voiceUrl) {
+      this.chat = chat
+      this.$nextTick(() => {
+        this.chatShow = true
+        this.playVoice(voiceUrl)
+      })
+      clearTimeout(this.chatShowTimer)
+      this.chatShowTimer = setTimeout(() => {
+        this.chatShow = false
+      }, this.chat.length * 1000)
+    },
+    addChat(chatData) {
+      let playFlag = false
+      if (this.chatList.length === 0) {
+        playFlag = true
+      }
+      this.chatList.push(chatData)
+      if (playFlag) {
+        this.playNextChat(true)
+      }
+    },
+    removeChat() {
+      if (this.chatList.length > 0) {
+        this.chatList.shift()
+      }
+    },
+    playNextChat(noremove) {
+      if (!noremove) {
+        this.removeChat()
+      }
+      const chatData = this.chatList[0]
+      if (chatData) {
+        this.say(chatData.chat, chatData.voiceUrl)
       }
     },
     toSocket() {
       this.socket = io.connect('/socketchat')
       this.socket.on('msg', (data) => {
+        const chatData = {
+          chat: data.message,
+          voiceUrl: data.voiceUrl,
+        }
+        this.addChat(chatData)
+
         console.log(data)
-        this.chat = data.message
-        this.$nextTick(() => {
-          this.chatShow = true
-          this.playVoice(data.voiceUrl)
-        })
-        clearTimeout(this.chatShowTimer)
-        this.chatShowTimer = setTimeout(() => {
-          this.chatShow = false
-        }, this.chat.length * 1000)
       })
       this.socket.on('getSettingData', (data) => {
         console.log(data)
