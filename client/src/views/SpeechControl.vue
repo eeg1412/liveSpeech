@@ -10,6 +10,7 @@
                 name="getType"
                 value="1"
                 v-model="getType"
+                :disabled="mouseDownFlag"
                 @change="getTypeChange"
               />
               自由捕获</label
@@ -21,6 +22,7 @@
                 name="getType"
                 value="2"
                 v-model="getType"
+                :disabled="mouseDownFlag"
                 @change="getTypeChange"
               />
               鼠标按住</label
@@ -32,6 +34,7 @@
                 name="getType"
                 value="3"
                 v-model="getType"
+                :disabled="mouseDownFlag"
                 @change="getTypeChange"
               />
               鼠标移入</label
@@ -43,6 +46,7 @@
                 name="getType"
                 value="4"
                 v-model="getType"
+                :disabled="mouseDownFlag"
                 @change="getTypeChange"
               />
               按住空格</label
@@ -54,6 +58,7 @@
                 name="getType"
                 value="0"
                 v-model="getType"
+                :disabled="mouseDownFlag"
                 @change="getTypeChange"
               />
               禁止捕获</label
@@ -80,8 +85,6 @@
         />
         <Button
           label="按住空格说话"
-          @mouseenter="speechStart"
-          @mouseleave="speechStop"
           :class="{ 'p-button-help': mouseDownFlag }"
           v-show="getType === '4'"
         />
@@ -140,13 +143,23 @@ export default {
       document.addEventListener('keyup', this.keyupSpeechStop)
     },
     keydownSpeechStart(event) {
-      if (!this.keypressFlag && event.keyCode === 32 && !this.inputIsFocus) {
+      if (
+        !this.keypressFlag &&
+        event.keyCode === 32 &&
+        !this.inputIsFocus &&
+        this.getType === '4'
+      ) {
         this.speechStart()
         this.keypressFlag = true
       }
     },
     keyupSpeechStop(event) {
-      if (this.keypressFlag && event.keyCode === 32 && !this.inputIsFocus) {
+      if (
+        this.keypressFlag &&
+        event.keyCode === 32 &&
+        !this.inputIsFocus &&
+        this.getType === '4'
+      ) {
         this.speechStop()
         this.keypressFlag = false
       }
