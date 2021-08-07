@@ -22,3 +22,5 @@ live2d模式
 
 ## 最终在OBS中的效果
 ![image](https://user-images.githubusercontent.com/27753071/128595433-df829087-0d0e-4b85-bc62-19154baf4c5f.png)
+
+Live2D 模型制作：[八城惺架](https://booth.pm/ja/items/2685284)（@yashiro_seika）
