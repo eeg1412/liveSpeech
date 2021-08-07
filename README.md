@@ -18,7 +18,7 @@ live2d模式
 2.下载nodejs  
 3.cmd在文件夹中执行npm install安装依赖  
 4.执行npm run start启动    
-5.用chrome或者edge打开http://localhost:3000/ 进行配置更改  
+5.用chrome或者edge打开http://localhost:3000/ 进行配置更改，因为需要用到浏览器捕获声音，所以千万不要关闭浏览器窗口  
 6.在obs中添加浏览器，地址为http://localhost:3000/chat 或者 http://localhost:3000/live2d   
 7.在obs中点击左上角菜单 【视图】→【停靠部件】→【自定义浏览器 Dock】中添加控制器http://localhost:3000/speechcontrol  
 
