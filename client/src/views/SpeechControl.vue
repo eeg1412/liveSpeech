@@ -23,7 +23,29 @@
                 v-model="getType"
                 @change="getTypeChange"
               />
-              按键捕获</label
+              鼠标按住</label
+            >
+          </div>
+          <div class="mr10">
+            <label
+              ><RadioButton
+                name="getType"
+                value="3"
+                v-model="getType"
+                @change="getTypeChange"
+              />
+              鼠标移入</label
+            >
+          </div>
+          <div class="mr10">
+            <label
+              ><RadioButton
+                name="getType"
+                value="4"
+                v-model="getType"
+                @change="getTypeChange"
+              />
+              按住空格</label
             >
           </div>
           <div class="mr10">
@@ -49,9 +71,28 @@
           v-show="getType === '2'"
         />
         <Button label="断句" @click="breakMessage" v-show="getType === '1'" />
+        <Button
+          label="鼠标移入说话"
+          @mouseenter="speechStart"
+          @mouseleave="speechStop"
+          :class="{ 'p-button-help': mouseDownFlag }"
+          v-show="getType === '3'"
+        />
+        <Button
+          label="按住空格说话"
+          @mouseenter="speechStart"
+          @mouseleave="speechStop"
+          :class="{ 'p-button-help': mouseDownFlag }"
+          v-show="getType === '4'"
+        />
       </div>
       <div class="p-inputgroup">
-        <InputText placeholder="捕获语音" v-model="message" />
+        <InputText
+          placeholder="捕获语音"
+          v-model="message"
+          @focus="inputIsFocus = true"
+          @blur="inputIsFocus = false"
+        />
         <Button label="手动发送" @click="sendByUser" />
       </div>
     </Panel>
@@ -81,12 +122,35 @@ export default {
       status: '未启动',
       getType: '0',
       message: '',
+      keypressFlag: false,
+      inputIsFocus: false,
     }
   },
   mounted() {
     this.toSocket()
+    this.initDocumentPress()
+  },
+  beforeUnmount() {
+    document.removeEventListener('keydown', this.keydownSpeechStart)
+    document.removeEventListener('keyup', this.keyupSpeechStop)
   },
   methods: {
+    initDocumentPress() {
+      document.addEventListener('keydown', this.keydownSpeechStart)
+      document.addEventListener('keyup', this.keyupSpeechStop)
+    },
+    keydownSpeechStart(event) {
+      if (!this.keypressFlag && event.keyCode === 32 && !this.inputIsFocus) {
+        this.speechStart()
+        this.keypressFlag = true
+      }
+    },
+    keyupSpeechStop(event) {
+      if (this.keypressFlag && event.keyCode === 32 && !this.inputIsFocus) {
+        this.speechStop()
+        this.keypressFlag = false
+      }
+    },
     sendSpeechControlStatus() {
       this.socket.emit('sendSpeechControlStatus', { getType: this.getType })
     },

@@ -25,7 +25,29 @@
                 v-model="getType"
                 @change="getTypeChange"
               />
-              按键捕获</label
+              鼠标按住</label
+            >
+          </div>
+          <div class="mr10">
+            <label
+              ><RadioButton
+                name="getType"
+                value="3"
+                v-model="getType"
+                @change="getTypeChange"
+              />
+              鼠标移入</label
+            >
+          </div>
+          <div class="mr10">
+            <label
+              ><RadioButton
+                name="getType"
+                value="4"
+                v-model="getType"
+                @change="getTypeChange"
+              />
+              按住空格</label
             >
           </div>
           <div class="mr10">
@@ -445,7 +467,11 @@ export default {
         }
         this.socket.emit('settingData', settingData)
         this.socket.on('getControlSpeech', (data) => {
-          if (this.getType === '2') {
+          if (
+            this.getType === '2' ||
+            this.getType === '3' ||
+            this.getType === '4'
+          ) {
             if (data) {
               this.speechStart()
             } else {
@@ -496,7 +522,12 @@ export default {
         case '2':
           this.speechStop()
           break
-
+        case '3':
+          this.speechStop()
+          break
+        case '4':
+          this.speechStop()
+          break
         default:
           break
       }
