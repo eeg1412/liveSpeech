@@ -57,6 +57,16 @@ export default {
           haveMotion: false,
           app: null,
         },
+        hiyori: {
+          x: 0,
+          y: 0,
+          messageBottom: '560px',
+          messageBackground: 'rgb(81 88 101)',
+          messageBorderColor: 'rgb(150 134 122)',
+          url: '/live2d/hiyori/hiyori_pro_t10.model3.json',
+          haveMotion: true,
+          app: null,
+        },
       },
     }
   },

@@ -127,6 +127,16 @@
                 LiveroiD_A-Y02</label
               >
             </div>
+            <div class="mr10">
+              <label
+                ><RadioButton
+                  name="selModel"
+                  value="hiyori"
+                  v-model="selModel"
+                />
+                桃瀬ひより</label
+              >
+            </div>
           </div>
         </div>
         <div class="pb15">
