@@ -89,14 +89,31 @@
           v-show="getType === '4'"
         />
       </div>
-      <div class="p-inputgroup">
+      <div class="p-inputgroup pb15">
         <InputText
-          placeholder="捕获语音"
           v-model="message"
           @focus="inputIsFocus = true"
           @blur="inputIsFocus = false"
         />
         <Button label="手动发送" @click="sendByUser" />
+      </div>
+      <div class="pb15 tl">
+        <div class="pb10">发送队列：</div>
+        <div v-show="messageList.length > 0">
+          <ProgressBar
+            class="countdown-progressbar"
+            :value="(messageCountDown / messageMaxCountDown) * 100"
+            :showValue="false"
+          />
+        </div>
+        <div v-for="item in messageList" :key="item.id">
+          <div class="message-list-message">{{ item.message }}</div>
+          <Button
+            label="删除"
+            @click="deleteMessageList(item.id)"
+            class="p-button-link"
+          />
+        </div>
       </div>
     </Panel>
   </main>
@@ -108,6 +125,7 @@ import InputText from 'primevue/inputtext'
 import RadioButton from 'primevue/radiobutton'
 import Panel from 'primevue/panel'
 import io from 'socket.io-client'
+import ProgressBar from 'primevue/progressbar'
 
 export default {
   name: 'SpeechControl',
@@ -116,6 +134,7 @@ export default {
     InputText,
     RadioButton,
     Panel,
+    ProgressBar,
   },
   data() {
     return {
@@ -127,17 +146,37 @@ export default {
       message: '',
       keypressFlag: false,
       inputIsFocus: false,
+      messageList: [],
+      messageCountDown: 0,
+      messageMaxCountDown: 0,
+      messageCountDownTimer: null,
     }
   },
   mounted() {
     this.toSocket()
     this.initDocumentPress()
+    this.initTimer()
   },
   beforeUnmount() {
     document.removeEventListener('keydown', this.keydownSpeechStart)
     document.removeEventListener('keyup', this.keyupSpeechStop)
+    clearInterval(this.messageCountDownTimer)
   },
   methods: {
+    deleteMessageList(id) {
+      this.socket.emit('sendDeletMessageListId', { id: id })
+    },
+    initTimer() {
+      this.messageCountDownTimer = setInterval(() => {
+        if (this.messageCountDown !== 0 && !this.mouseDownFlag) {
+          let newCount = this.messageCountDown - 66
+          if (newCount < 0) {
+            newCount = 0
+          }
+          this.messageCountDown = newCount
+        }
+      }, 66)
+    },
     initDocumentPress() {
       document.addEventListener('keydown', this.keydownSpeechStart)
       document.addEventListener('keyup', this.keyupSpeechStop)
@@ -171,7 +210,7 @@ export default {
       this.sendSpeechControlStatus()
     },
     send(message) {
-      this.socket.emit('send', { message: message })
+      this.socket.emit('sendSpeechControlText', { message: message })
     },
     sendByUser() {
       this.send(this.message)
@@ -198,6 +237,11 @@ export default {
         this.socket.on('getHomeStatus', (data) => {
           this.status = data.status
           this.getType = data.getType
+        })
+        this.socket.on('getMessageListData', (data) => {
+          this.messageCountDown = data.messageCountDown
+          this.messageMaxCountDown = data.messageMaxCountDown
+          this.messageList = data.messageList
         })
       })
       this.socket.on('disconnect', () => {

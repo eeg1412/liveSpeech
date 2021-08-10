@@ -99,5 +99,14 @@ module.exports = (io) => {
     socket.on('sendSpeechControlStatus', (data) => {
       chat.emit('getSpeechControlStatus', data)
     })
+    socket.on('sendMessageListData', (data) => {
+      chat.emit('getMessageListData', data)
+    })
+    socket.on('sendSpeechControlText', (data) => {
+      chat.emit('getSpeechControlText', data)
+    })
+    socket.on('sendDeletMessageListId', (data) => {
+      chat.emit('getDeletMessageListId', data)
+    })
   })
 }
