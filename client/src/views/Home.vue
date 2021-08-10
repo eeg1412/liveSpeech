@@ -75,45 +75,10 @@
           />
         </div>
       </div>
-      <div class="pb15" v-show="getType !== '1'">
-        <div class="flex align-content-center flex-wrap">
-          <div class="linehetht35 pr5">延时发送：</div>
-          <div>
-            <InputNumber
-              v-model.number="delyTime"
-              :min="0"
-              showButtons
-              buttonLayout="horizontal"
-              :step="0.01"
-              incrementButtonIcon="pi pi-plus"
-              decrementButtonIcon="pi pi-minus"
-            />
-          </div>
-          <div class="linehetht35 pl5">秒</div>
-        </div>
-      </div>
       <div class="pb10">状态：{{ status }}</div>
-      <div class="p-inputgroup pb15">
-        <InputText v-model="messageText" @input="sendByUserInput" />
+      <div class="p-inputgroup">
+        <InputText placeholder="捕获语音" v-model="message" />
         <Button label="手动发送" @click="sendByUser" />
-      </div>
-      <div class="pb15">
-        <div class="pb10">发送队列：</div>
-        <div v-show="messageList.length > 0">
-          <ProgressBar
-            class="countdown-progressbar"
-            :value="(messageCountDown / messageMaxCountDown) * 100"
-            :showValue="false"
-          />
-        </div>
-        <div v-for="item in messageList" :key="item.id">
-          <div class="message-list-message">{{ item.message }}</div>
-          <Button
-            label="删除"
-            @click="deleteMessageList(item.id)"
-            class="p-button-link"
-          />
-        </div>
       </div>
     </Panel>
     <Panel header="全局设置" class="mb15">
@@ -363,7 +328,6 @@ import RadioButton from 'primevue/radiobutton'
 import useClipboard from 'vue-clipboard3'
 import InputNumber from 'primevue/inputnumber'
 import Password from 'primevue/password'
-import ProgressBar from 'primevue/progressbar'
 // import Slider from 'primevue/slider'
 
 export default {
@@ -379,23 +343,12 @@ export default {
     RadioButton,
     InputNumber,
     Password,
-    ProgressBar,
     // Slider,
   },
   data() {
     return {
       rec: null,
       message: '',
-      messageList: [],
-      messageId: 0,
-      messageText: '',
-      delyTime: 0,
-      sendMessageTimer: null,
-      messageCountDown: 0,
-      messageMaxCountDown: 0,
-      messageCountDownTimer: null,
-      messageSocketTimer: null,
-      speeching: false,
       avatarPre: '',
       socket: null,
       status: '未启动',
@@ -438,54 +391,8 @@ export default {
     status() {
       this.sendHomeStatus()
     },
-    messageMaxCountDown() {
-      if (this.socket) {
-        this.sendMessageSocket()
-      }
-    },
-    messageCountDown() {
-      if (
-        this.socket &&
-        this.messageCountDown === this.messageMaxCountDown &&
-        this.messageMaxCountDown !== 0
-      ) {
-        this.sendMessageSocket()
-      }
-    },
-    messageList: {
-      handler() {
-        this.sendMessageSocket()
-      },
-      deep: true,
-    },
   },
   methods: {
-    sendMessageSocket() {
-      clearTimeout(this.messageSocketTimer)
-      this.messageSocketTimer = setTimeout(() => {
-        if (this.socket) {
-          this.socket.emit('sendMessageListData', {
-            messageCountDown: this.messageCountDown,
-            messageMaxCountDown: this.messageMaxCountDown,
-            messageList: this.messageList,
-          })
-        }
-      }, 300)
-    },
-    initTimer() {
-      this.messageCountDownTimer = setInterval(() => {
-        if (this.messageCountDown !== 0 && !this.speeching) {
-          let newCount = this.messageCountDown - 66
-          if (newCount < 0) {
-            newCount = 0
-          }
-          this.messageCountDown = newCount
-        }
-        if (this.messageCountDown === 0 && this.messageList.length > 0) {
-          this.sendMessageList()
-        }
-      }, 66)
-    },
     sendHomeStatus() {
       this.socket.emit('sendHomeStatus', {
         status: this.status,
@@ -541,13 +448,8 @@ export default {
       localStorage.setItem('liveSpeechSetting', JSON.stringify(settingData))
     },
     sendByUser() {
-      this.addMessageToList(this.messageText)
-      this.clearMessageTimer()
-      // this.sendMessageTimer = setTimeout(() => {
-      //   this.sendMessageList()
-      // }, this.delyTime * 1000)
-      // this.send(this.messageText)
-      this.messageText = ''
+      this.send(this.message)
+      this.message = ''
     },
     changeAvatar() {
       // console.log("aa")
@@ -594,13 +496,6 @@ export default {
         this.socket.on('speechWantHomeStatus', () => {
           this.sendHomeStatus()
         })
-        this.socket.on('getSpeechControlText', (data) => {
-          this.messageText = data.message
-          this.sendByUser()
-        })
-        this.socket.on('getDeletMessageListId', (data) => {
-          this.deleteMessageList(data.id)
-        })
         this.socket.on('getSpeechControlStatus', (data) => {
           this.getType = data.getType
           switch (this.getType) {
@@ -629,43 +524,7 @@ export default {
         console.log('已断开')
       })
     },
-    clearMessageTimer() {
-      // clearTimeout(this.sendMessageTimer)
-      this.messageCountDown = this.delyTime * 1000
-      this.messageMaxCountDown = this.delyTime * 1000
-    },
-    deleteMessageList(id) {
-      this.messageList = this.messageList.filter((item) => {
-        return item.id !== id
-      })
-    },
-    sendByUserInput() {
-      // this.clearMessageTimer()
-      // this.sendMessageTimer = setTimeout(() => {
-      //   this.sendMessageList()
-      // }, this.delyTime * 1000)
-    },
-    addMessageToList(transcript) {
-      const messageData = {
-        message: transcript,
-        id: String(new Date().getTime()) + this.messageId,
-      }
-      this.messageList.push(messageData)
-      this.messageId++
-    },
-    sendMessageList() {
-      const list = JSON.parse(JSON.stringify(this.messageList))
-      list.forEach((element) => {
-        setTimeout(() => {
-          this.send(element.message)
-        }, 300)
-        this.messageList = this.messageList.filter((item) => {
-          return item.id !== element.id
-        })
-      })
-    },
     send(message) {
-      console.log(message)
       this.socket.emit('send', { message: message })
     },
     getTypeChange() {
@@ -716,18 +575,13 @@ export default {
         // }
         const { transcript } = e.results[e.resultIndex][0]
         console.log(`Recognised: ${transcript}`)
-        this.addMessageToList(transcript)
-        // this.message = transcript
-        // this.send(this.message)
+        this.message = transcript
+        this.send(this.message)
         // rec.stop()
       }
 
       rec.onstart = () => {
         console.log('on start')
-        if (this.getType !== '1') {
-          this.clearMessageTimer()
-          this.speeching = true
-        }
         this.status = '初始化中'
       }
       rec.onerror = () => {
@@ -741,12 +595,6 @@ export default {
         } else {
           this.status = '未启动'
         }
-        // if (this.getType !== '1') {
-        //   this.sendMessageTimer = setTimeout(() => {
-        //     this.sendMessageList()
-        //   }, this.delyTime * 1000)
-        // }
-        this.speeching = false
       }
 
       rec.onspeechstart = () => {
@@ -803,15 +651,12 @@ export default {
   created() {},
   mounted() {
     this.init()
-    this.initTimer()
   },
   beforeCreate() {},
   beforeMount() {},
   beforeUpdate() {},
   updated() {},
-  beforeUnmount() {
-    clearInterval(this.messageCountDownTimer)
-  },
+  beforeUnmount() {},
   unmounted() {},
   activated() {},
 }
