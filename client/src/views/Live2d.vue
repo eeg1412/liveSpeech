@@ -328,7 +328,6 @@ export default {
   border-radius: 5px;
   background-color: rgb(81 88 101);
   font-size: 24px;
-  text-transform: uppercase;
   overflow: hidden;
   position: absolute;
 }
@@ -340,7 +339,6 @@ export default {
   color: #fff;
   text-align: center;
   font-size: 22px;
-  text-transform: uppercase;
   width: 400px;
 }
 /* 回り込み解除 */

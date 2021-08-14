@@ -89,14 +89,87 @@
           v-show="getType === '4'"
         />
       </div>
+      <Divider type="dashed" />
+      <div class="flex justify-content-center pb10">
+        <div class="mr10">
+          <label
+            ><RadioButton
+              name="statementSel"
+              value="1"
+              v-model="statementSel"
+            />
+            常用语句</label
+          >
+        </div>
+        <div class="mr10">
+          <label
+            ><RadioButton
+              name="statementSel"
+              value="2"
+              v-model="statementSel"
+            />
+            临时语句</label
+          >
+        </div>
+
+        <div class="mr10">
+          <label
+            ><RadioButton
+              name="statementSel"
+              value="0"
+              v-model="statementSel"
+            />
+            立刻发送</label
+          >
+        </div>
+      </div>
       <div class="p-inputgroup">
         <InputText
-          placeholder="捕获语音"
           v-model="message"
           @focus="inputIsFocus = true"
           @blur="inputIsFocus = false"
         />
-        <Button label="手动发送" @click="sendByUser" />
+        <Button
+          :label="statementSel === '0' ? '发送' : '添加'"
+          @click="sendByUser"
+        />
+      </div>
+      <Divider
+        type="dashed"
+        v-show="commonStatements.length > 0 || temporaryStatement.length > 0"
+      />
+      <div class="tl" v-show="commonStatements.length > 0">
+        <div>常用语句：</div>
+        <div v-for="(item, index) in commonStatements" :key="index">
+          {{ item }}
+          <Button
+            label="立刻发送"
+            class="p-button-text nopadding-btn"
+            @click="sendCommonStatements(item)"
+          />
+          <Button
+            label="删除"
+            class="p-button-text p-button-danger nopadding-btn"
+            @click="deleteCommonStatements(index)"
+          />
+        </div>
+      </div>
+      <Divider type="dashed" v-show="commonStatements.length > 0" />
+      <div class="tl" v-show="temporaryStatement.length > 0">
+        <div>临时语句：</div>
+        <div v-for="(item, index) in temporaryStatement" :key="index">
+          {{ item }}
+          <Button
+            label="立刻发送"
+            class="p-button-text nopadding-btn"
+            @click="sendTemporaryStatement(item, index)"
+          />
+          <Button
+            label="删除"
+            class="p-button-text p-button-danger nopadding-btn"
+            @click="deleteTemporaryStatement(index)"
+          />
+        </div>
       </div>
     </Panel>
   </main>
@@ -106,6 +179,7 @@
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import RadioButton from 'primevue/radiobutton'
+import Divider from 'primevue/divider'
 import Panel from 'primevue/panel'
 import io from 'socket.io-client'
 
@@ -116,6 +190,7 @@ export default {
     InputText,
     RadioButton,
     Panel,
+    Divider,
   },
   data() {
     return {
@@ -127,17 +202,43 @@ export default {
       message: '',
       keypressFlag: false,
       inputIsFocus: false,
+      statementSel: '0',
+      commonStatements: [],
+      temporaryStatement: [],
     }
   },
   mounted() {
     this.toSocket()
     this.initDocumentPress()
+    this.initCommonStatements()
   },
   beforeUnmount() {
     document.removeEventListener('keydown', this.keydownSpeechStart)
     document.removeEventListener('keyup', this.keyupSpeechStop)
   },
   methods: {
+    sendCommonStatements(text) {
+      this.send(text)
+    },
+    sendTemporaryStatement(text, index) {
+      this.send(text)
+      this.deleteTemporaryStatement(index)
+    },
+    initCommonStatements() {
+      const liveSpeechCommonStatementsStr =
+        localStorage.getItem('liveSpeechCommonStatements') || '[]'
+      this.commonStatements = JSON.parse(liveSpeechCommonStatementsStr)
+    },
+    deleteCommonStatements(i) {
+      this.commonStatements.splice(i, 1)
+      localStorage.setItem(
+        'liveSpeechCommonStatements',
+        JSON.stringify(this.commonStatements)
+      )
+    },
+    deleteTemporaryStatement(i) {
+      this.temporaryStatement.splice(i, 1)
+    },
     initDocumentPress() {
       document.addEventListener('keydown', this.keydownSpeechStart)
       document.addEventListener('keyup', this.keyupSpeechStop)
@@ -174,7 +275,25 @@ export default {
       this.socket.emit('send', { message: message })
     },
     sendByUser() {
-      this.send(this.message)
+      switch (this.statementSel) {
+        case '0':
+          this.send(this.message)
+          break
+        case '1':
+          this.commonStatements.push(this.message)
+          localStorage.setItem(
+            'liveSpeechCommonStatements',
+            JSON.stringify(this.commonStatements)
+          )
+          break
+        case '2':
+          this.temporaryStatement.push(this.message)
+          break
+
+        default:
+          break
+      }
+
       this.message = ''
     },
     speechStart() {
@@ -216,7 +335,10 @@ main {
   transform: translate(-50%, -50%);
   padding: 15px 30px;
   text-align: center;
-  text-transform: uppercase;
   width: 100%;
+}
+.nopadding-btn {
+  padding: 0;
+  margin-right: 8px;
 }
 </style>
