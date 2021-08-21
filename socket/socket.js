@@ -121,8 +121,8 @@ module.exports = (io) => {
     socket.on('sendSpeechControlText', (data) => {
       chat.emit('getSpeechControlText', data)
     })
-    socket.on('sendDeletMessageListId', (data) => {
-      chat.emit('getDeletMessageListId', data)
+    socket.on('sendMessageListId', (data) => {
+      chat.emit('getMessageListId', data)
     })
   })
 }

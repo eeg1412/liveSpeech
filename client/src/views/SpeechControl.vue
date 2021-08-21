@@ -119,7 +119,7 @@
               value="0"
               v-model="statementSel"
             />
-            立刻发送</label
+            发送</label
           >
         </div>
       </div>
@@ -128,11 +128,51 @@
           v-model="message"
           @focus="inputIsFocus = true"
           @blur="inputIsFocus = false"
+          @keypress.enter="sendByUser"
         />
         <Button
           :label="statementSel === '0' ? '发送' : '添加'"
           @click="sendByUser"
+          @keypress.enter="sendByUser"
         />
+      </div>
+      <Divider type="dashed" v-show="sendList.length > 0" />
+      <div class="tl" v-show="sendList.length > 0">
+        <div>发送队列：</div>
+        <div v-for="item in sendList" :key="item.id" class="send-list">
+          <div>
+            {{ item.message }}
+            <Button
+              label="立刻发送"
+              class="p-button-text nopadding-btn"
+              @click="sendSpeechControlMessage(item.id, 'quickSend')"
+            />
+            <Button
+              label="编辑"
+              class="p-button-text p-button-help nopadding-btn"
+              @click="
+                sendSpeechControlMessage(item.id, 'editMessage', item.message)
+              "
+            />
+            <Button
+              label="删除"
+              class="p-button-text p-button-danger
+            nopadding-btn"
+              @click="sendSpeechControlMessage(item.id, 'deleteMessage')"
+            />
+          </div>
+          <div class="pt5">
+            <ProgressBar
+              class="send-time-progress"
+              :showValue="false"
+              :value="
+                (1 -
+                  (item.sendTime - timeNow) / (item.sendTime - item.addTime)) *
+                  100
+              "
+            />
+          </div>
+        </div>
       </div>
       <Divider
         type="dashed"
@@ -182,6 +222,8 @@ import RadioButton from 'primevue/radiobutton'
 import Divider from 'primevue/divider'
 import Panel from 'primevue/panel'
 import io from 'socket.io-client'
+import * as workerTimers from 'worker-timers'
+import ProgressBar from 'primevue/progressbar'
 
 export default {
   name: 'SpeechControl',
@@ -191,6 +233,7 @@ export default {
     RadioButton,
     Panel,
     Divider,
+    ProgressBar,
   },
   data() {
     return {
@@ -205,18 +248,39 @@ export default {
       statementSel: '0',
       commonStatements: [],
       temporaryStatement: [],
+      sendList: [],
+      timeNow: new Date().getTime(),
     }
   },
   mounted() {
     this.toSocket()
     this.initDocumentPress()
     this.initCommonStatements()
+    this.initTime()
   },
   beforeUnmount() {
     document.removeEventListener('keydown', this.keydownSpeechStart)
     document.removeEventListener('keyup', this.keyupSpeechStop)
   },
   methods: {
+    sendSpeechControlMessage(id, type, message) {
+      const data = {
+        id: id,
+        type: type,
+      }
+      if (type === 'editMessage') {
+        this.message = message
+      }
+      this.socket.emit('sendMessageListId', data)
+    },
+    initTime() {
+      workerTimers.setInterval(() => {
+        if (this.sendList.length > 0) {
+          this.timeNow = new Date().getTime()
+        }
+      }, 42)
+    },
+
     sendCommonStatements(text) {
       this.send(text)
     },
@@ -277,7 +341,8 @@ export default {
     sendByUser() {
       switch (this.statementSel) {
         case '0':
-          this.send(this.message)
+          // this.send(this.message)
+          this.socket.emit('sendSpeechControlText', this.message)
           break
         case '1':
           this.commonStatements.push(this.message)
@@ -317,6 +382,9 @@ export default {
         this.socket.on('getHomeStatus', (data) => {
           this.status = data.status
           this.getType = data.getType
+        })
+        this.socket.on('getMessageListData', (data) => {
+          this.sendList = data
         })
       })
       this.socket.on('disconnect', () => {

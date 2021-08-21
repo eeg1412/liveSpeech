@@ -1,6 +1,7 @@
 <!-- home -->
 <template>
   <div class="home">
+    <ConfirmDialog></ConfirmDialog>
     <!-- <div>头像URL：<input v-model="avatar" @blur="changeAvatar" /></div> -->
     <Panel header="语音获取" class="mb15">
       <div class="pb15">
@@ -62,7 +63,7 @@
             >
           </div>
         </div>
-        <div v-if="analyser">
+        <div v-if="analyser && getType === '1'">
           <div class="mt10 mb10">
             <ProgressBar :value="volLevel / voiceSizeSensitivity" />
           </div>
@@ -98,6 +99,20 @@
             />
           </div>
         </div>
+        <div>
+          <div class="mb10 mt10">
+            <div class="pb10">延迟发送(ms)：</div>
+            <InputNumber
+              v-model.number="sendTimeDaly"
+              showButtons
+              buttonLayout="horizontal"
+              :step="1"
+              incrementButtonIcon="pi pi-plus"
+              decrementButtonIcon="pi pi-minus"
+              :min="0"
+            />
+          </div>
+        </div>
         <div class="pb10 pt10">
           <Button
             label="复制控制器URL"
@@ -112,9 +127,51 @@
         </div>
       </div>
       <div class="pb10">状态：{{ status }}</div>
-      <div class="p-inputgroup">
-        <InputText placeholder="捕获语音" v-model="message" />
-        <Button label="手动发送" @click="sendByUser" />
+      <div class="p-inputgroup mb10">
+        <InputText
+          placeholder="编辑内容"
+          v-model="message"
+          @keypress.enter="sendByUser"
+        />
+        <Button
+          label="手动发送"
+          @click="sendByUser"
+          @keypress.enter="sendByUser"
+        />
+      </div>
+      <div v-show="sendTimeDaly > 0">
+        <div>发送队列：</div>
+        <div v-for="item in sendList" :key="item.id" class="send-list">
+          <div>
+            {{ item.message }}
+            <Button
+              label="立刻发送"
+              class="p-button-text nopadding-btn"
+              @click="quickSend(item)"
+            />
+            <Button
+              label="编辑"
+              class="p-button-text p-button-help nopadding-btn"
+              @click="editMessage(item)"
+            />
+            <Button
+              label="删除"
+              class="p-button-text p-button-danger nopadding-btn"
+              @click="deleteMessage(item.id)"
+            />
+          </div>
+          <div class="pt5">
+            <ProgressBar
+              class="send-time-progress"
+              :showValue="false"
+              :value="
+                (1 -
+                  (item.sendTime - timeNow) / (item.sendTime - item.addTime)) *
+                  100
+              "
+            />
+          </div>
+        </div>
       </div>
     </Panel>
     <Panel header="全局设置" class="mb15">
@@ -368,6 +425,7 @@ import Password from 'primevue/password'
 import AudioAPI from '../utils/AudioAPI.js'
 import ProgressBar from 'primevue/progressbar'
 import Slider from 'primevue/slider'
+import ConfirmDialog from 'primevue/confirmdialog'
 
 export default {
   name: 'Home',
@@ -384,6 +442,7 @@ export default {
     Password,
     ProgressBar,
     Slider,
+    ConfirmDialog,
   },
   data() {
     return {
@@ -442,6 +501,12 @@ export default {
       breakTime: localStorage.getItem('breakTime')
         ? Number(localStorage.getItem('breakTime'))
         : 800,
+
+      sendList: [],
+      sendTimeDaly: localStorage.getItem('sendTimeDaly')
+        ? Number(localStorage.getItem('sendTimeDaly'))
+        : 3000,
+      timeNow: new Date().getTime(),
     }
   },
   computed: {},
@@ -449,12 +514,42 @@ export default {
     status() {
       this.sendHomeStatus()
     },
+    sendTimeDaly(v) {
+      localStorage.setItem('sendTimeDaly', v)
+    },
     breakTime(v) {
       console.log(v)
       localStorage.setItem('breakTime', v)
     },
+    sendList: {
+      handler(v) {
+        console.log(v)
+        this.socket.emit('sendMessageListData', v)
+      },
+      deep: true,
+    },
   },
   methods: {
+    quickSend(item) {
+      item['sendTime'] = this.timeNow
+    },
+    editMessage(item) {
+      this.message = item.message
+      this.deleteMessage(item.id)
+    },
+    deleteMessage(id) {
+      this.sendList = this.sendList.filter((item) => {
+        return item.id !== id
+      })
+    },
+    initTime() {
+      workerTimers.setInterval(() => {
+        if (this.sendList.length > 0) {
+          this.timeNow = new Date().getTime()
+          this.doSendMessageList()
+        }
+      }, 42)
+    },
     voiceThresholdChange() {
       localStorage.setItem('voiceThreshold', this.voiceThreshold)
     },
@@ -553,7 +648,10 @@ export default {
       localStorage.setItem('liveSpeechSetting', JSON.stringify(settingData))
     },
     sendByUser() {
-      this.send(this.message)
+      if (this.message === '') {
+        return false
+      }
+      this.addToSendList(this.message)
       this.message = ''
     },
     changeAvatar() {
@@ -601,6 +699,31 @@ export default {
         this.socket.on('speechWantHomeStatus', () => {
           this.sendHomeStatus()
         })
+        this.socket.on('getSpeechControlText', (data) => {
+          if (data) {
+            this.addToSendList(data)
+          }
+        })
+        this.socket.on('getMessageListId', (data) => {
+          const { id, type } = data
+          const item = this.sendList.find((el) => {
+            return el.id === id
+          })
+          switch (type) {
+            case 'editMessage':
+            case 'deleteMessage':
+              this.deleteMessage(id)
+              break
+            case 'quickSend':
+              if (item) {
+                this.quickSend(item)
+              }
+              break
+
+            default:
+              break
+          }
+        })
         this.socket.on('getSpeechControlStatus', (data) => {
           this.getType = data.getType
           switch (this.getType) {
@@ -629,6 +752,34 @@ export default {
         console.log('已断开')
       })
     },
+    addToSendList(message) {
+      this.sendList.push({
+        id:
+          String(new Date().getTime()) +
+          '-' +
+          String(Math.floor(Math.random() * 1000)),
+        message: message,
+        addTime: new Date().getTime(),
+        sendTime: new Date().getTime() + this.sendTimeDaly,
+      })
+    },
+    doSendMessageList() {
+      if (this.sendList.length > 0) {
+        const time = this.timeNow
+        let count = 0
+        this.sendList.forEach((element) => {
+          if (time >= element.sendTime) {
+            this.send(element.message)
+            count++
+          }
+        })
+        if (count > 0) {
+          this.sendList = this.sendList.filter((element) => {
+            return time < element.sendTime
+          })
+        }
+      }
+    },
     send(message) {
       this.socket.emit('send', { message: message })
     },
@@ -639,9 +790,6 @@ export default {
           break
         case '1':
           this.speechStart()
-          if (!this.startListenAudio) {
-            this.initAudioListen()
-          }
           break
         case '2':
           this.speechStop()
@@ -685,17 +833,15 @@ export default {
         console.log(`Recognised: ${transcript}`)
         console.log(`confidence: ${confidence}`)
         console.log(`speechOn: ${this.speechOn}`)
-        if (confidence > 0.75) {
-          if (this.getType === '1') {
-            if (this.speechOn) {
-              this.message = transcript
-              this.send(this.message)
-              this.speechOn = false
-            }
-          } else {
-            this.message = transcript
-            this.send(this.message)
+        if (this.getType === '1') {
+          if (this.speechOn) {
+            // this.message = transcript
+            this.addToSendList(transcript)
+            this.speechOn = false
           }
+        } else {
+          // this.message = transcript
+          this.addToSendList(transcript)
         }
 
         // rec.stop()
@@ -773,6 +919,24 @@ export default {
   created() {},
   mounted() {
     this.init()
+    this.initTime()
+    this.$confirm.require({
+      message: '点击获取权限！',
+      header: '欢迎使用',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: '确定',
+      rejectClass: 'nonoBtn',
+      accept: () => {
+        if (!this.startListenAudio) {
+          this.initAudioListen()
+        }
+      },
+      reject: () => {
+        if (!this.startListenAudio) {
+          this.initAudioListen()
+        }
+      },
+    })
   },
   beforeCreate() {},
   beforeMount() {},
