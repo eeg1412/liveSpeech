@@ -8,7 +8,7 @@ const fs = require('fs')
 const util = require('util')
 // Creates a client
 const client = new textToSpeech.TextToSpeechClient()
-async function quickStart(message) {
+async function quickStart (message) {
   // The text to synthesize
   const text = message
 
@@ -37,7 +37,7 @@ async function quickStart(message) {
   // console.log('Audio content written to file: output.mp3');
 }
 
-function deleteSystemSetting(setting) {
+function deleteSystemSetting (setting) {
   const str = JSON.stringify(setting)
   const obj = JSON.parse(str)
   delete obj.azureKey
@@ -46,41 +46,57 @@ function deleteSystemSetting(setting) {
   return obj
 }
 
+let chatList = []
+
+async function sendData (chat) {
+  const data = chatList[0]
+  if (global.myAppConfig.isSpeech) {
+    let url = ''
+    switch (global.myAppConfig.cloudSel) {
+      case 'googleNiang':
+        url = await googleTTS.getAudioBase64(data.message, {
+          lang: 'zh',
+          slow: false,
+          host: 'https://translate.google.com',
+        })
+        data['voiceUrl'] = 'data:audio/mp3;base64,' + url
+        break
+      case 'googleCloud':
+        url = await quickStart(data.message)
+        data['voiceUrl'] = 'data:audio/mp3;base64,' + url
+        break
+      case 'azure':
+        url = await azuretextToSpeech(
+          global.myAppConfig.azureKey,
+          global.myAppConfig.azureRegion,
+          global.myAppConfig.azureVoice,
+          data.message
+        )
+        data['voiceUrl'] = 'data:audio/mp3;base64,' + url
+        break
+      default:
+        break
+    }
+  }
+  chat.emit('msg', JSON.parse(JSON.stringify(data)))
+  chatList = chatList.filter((item) => {
+    return item.id !== data.id
+  })
+  if (chatList.length > 0) {
+    sendData(chat)
+  }
+}
+
 module.exports = (io) => {
   // console.log(io);
   const chat = io.of('/socketchat').on('connection', function (socket) {
     socket.emit('getSettingData', deleteSystemSetting(global.myAppConfig))
     socket.on('send', async (data) => {
-      if (global.myAppConfig.isSpeech) {
-        let url = ''
-        switch (global.myAppConfig.cloudSel) {
-          case 'googleNiang':
-            url = await googleTTS.getAudioBase64(data.message, {
-              lang: 'zh',
-              slow: false,
-              host: 'https://translate.google.com',
-            })
-            data['voiceUrl'] = 'data:audio/mp3;base64,' + url
-            break
-          case 'googleCloud':
-            url = await quickStart(data.message)
-            data['voiceUrl'] = 'data:audio/mp3;base64,' + url
-            break
-          case 'azure':
-            url = await azuretextToSpeech(
-              global.myAppConfig.azureKey,
-              global.myAppConfig.azureRegion,
-              global.myAppConfig.azureVoice,
-              data.message
-            )
-            data['voiceUrl'] = 'data:audio/mp3;base64,' + url
-            break
-          default:
-            break
-        }
+      data["id"] = String(new Date().getTime()) + "-" + String(Math.floor(Math.random() * 1000))
+      chatList.push(data)
+      if (chatList.length === 1) {
+        sendData(chat)
       }
-
-      chat.emit('msg', data)
     })
     socket.on('controlSpeech', (data) => {
       chat.emit('getControlSpeech', data)
