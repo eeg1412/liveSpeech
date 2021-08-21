@@ -75,7 +75,7 @@
           :class="{ 'p-button-help': mouseDownFlag }"
           v-show="getType === '2'"
         />
-        <Button label="断句" @click="breakMessage" v-show="getType === '1'" />
+        <!-- <Button label="断句" @click="breakMessage" v-show="getType === '1'" /> -->
         <Button
           label="鼠标移入说话"
           @mouseenter="speechStart"

@@ -62,6 +62,42 @@
             >
           </div>
         </div>
+        <div v-if="analyser">
+          <div class="mt10 mb10">
+            <ProgressBar :value="volLevel / voiceSizeSensitivity" />
+          </div>
+          <div class="mb10">
+            <div class="pb10">阈值({{ voiceThreshold }})：</div>
+            <Slider
+              v-model="voiceThreshold"
+              :min="0"
+              :max="100"
+              @change="voiceThresholdChange"
+            />
+          </div>
+          <div class="mb10">
+            <div class="pb10">灵敏度({{ -minDecibels }}dB)：</div>
+            <Slider
+              v-model="minDecibels"
+              @change="minDecibelsChange"
+              :min="31"
+              :max="100"
+            />
+          </div>
+          <div class="mb10">
+            <div class="pb10">断句延时(ms)：</div>
+            <InputNumber
+              v-model.number="breakTime"
+              showButtons
+              buttonLayout="horizontal"
+              :step="1"
+              incrementButtonIcon="pi pi-plus"
+              decrementButtonIcon="pi pi-minus"
+              :min="100"
+              :max="10000"
+            />
+          </div>
+        </div>
         <div class="pb10 pt10">
           <Button
             label="复制控制器URL"
@@ -316,6 +352,7 @@
 
 <script>
 import io from 'socket.io-client'
+import * as workerTimers from 'worker-timers'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Panel from 'primevue/panel'
@@ -328,7 +365,9 @@ import RadioButton from 'primevue/radiobutton'
 import useClipboard from 'vue-clipboard3'
 import InputNumber from 'primevue/inputnumber'
 import Password from 'primevue/password'
-// import Slider from 'primevue/slider'
+import AudioAPI from '../utils/AudioAPI.js'
+import ProgressBar from 'primevue/progressbar'
+import Slider from 'primevue/slider'
 
 export default {
   name: 'Home',
@@ -343,7 +382,8 @@ export default {
     RadioButton,
     InputNumber,
     Password,
-    // Slider,
+    ProgressBar,
+    Slider,
   },
   data() {
     return {
@@ -384,6 +424,24 @@ export default {
       azureRegion: '',
       azureVoice: 'zh-CN-XiaoxiaoNeural',
       selModel: 'LiveroiD_A-Y01',
+      timer: null,
+      voiceTimer: null,
+
+      analyser: null,
+      volLevel: 0,
+      speechOn: false,
+
+      voiceSizeSensitivity: 1000,
+      startListenAudio: false,
+      minDecibels: localStorage.getItem('minDecibels')
+        ? Number(localStorage.getItem('minDecibels'))
+        : 75,
+      voiceThreshold: localStorage.getItem('voiceThreshold')
+        ? Number(localStorage.getItem('voiceThreshold'))
+        : 10,
+      breakTime: localStorage.getItem('breakTime')
+        ? Number(localStorage.getItem('breakTime'))
+        : 800,
     }
   },
   computed: {},
@@ -391,8 +449,55 @@ export default {
     status() {
       this.sendHomeStatus()
     },
+    breakTime(v) {
+      console.log(v)
+      localStorage.setItem('breakTime', v)
+    },
   },
   methods: {
+    voiceThresholdChange() {
+      localStorage.setItem('voiceThreshold', this.voiceThreshold)
+    },
+    initAudioListen() {
+      AudioAPI.start().then((a) => {
+        this.analyser = a
+        this.minDecibelsChange()
+        this.startGetVoiceSize()
+      })
+    },
+    minDecibelsChange() {
+      this.analyser.minDecibels = -this.minDecibels
+      localStorage.setItem('minDecibels', this.minDecibels)
+    },
+    startGetVoiceSize() {
+      this.timer = workerTimers.setInterval(() => {
+        if (this.getType === '1') {
+          const voiceSize = AudioAPI.getVoiceSize(this.analyser)
+          if (voiceSize / this.voiceSizeSensitivity > this.voiceThreshold) {
+            if (this.voiceTimer) {
+              workerTimers.clearTimeout(this.voiceTimer)
+              this.voiceTimer = null
+            }
+            this.speechOn = true
+          } else {
+            if (this.speechOn && !this.voiceTimer) {
+              clearTimeout(this.voiceTimer)
+              this.voiceTimer = null
+              this.voiceTimer = workerTimers.setTimeout(() => {
+                // 800ms后还没断句就强行断句
+                if (this.speechOn) {
+                  this.speechStop()
+                  console.log('断句')
+                }
+
+                this.voiceTimer = null
+              }, this.breakTime)
+            }
+          }
+          this.volLevel = voiceSize
+        }
+      }, 30)
+    },
     sendHomeStatus() {
       this.socket.emit('sendHomeStatus', {
         status: this.status,
@@ -534,6 +639,9 @@ export default {
           break
         case '1':
           this.speechStart()
+          if (!this.startListenAudio) {
+            this.initAudioListen()
+          }
           break
         case '2':
           this.speechStop()
@@ -573,10 +681,23 @@ export default {
         //   this.message = transcript
         //   this.send(this.message)
         // }
-        const { transcript } = e.results[e.resultIndex][0]
+        const { transcript, confidence } = e.results[e.resultIndex][0]
         console.log(`Recognised: ${transcript}`)
-        this.message = transcript
-        this.send(this.message)
+        console.log(`confidence: ${confidence}`)
+        console.log(`speechOn: ${this.speechOn}`)
+        if (confidence > 0.75) {
+          if (this.getType === '1') {
+            if (this.speechOn) {
+              this.message = transcript
+              this.send(this.message)
+              this.speechOn = false
+            }
+          } else {
+            this.message = transcript
+            this.send(this.message)
+          }
+        }
+
         // rec.stop()
       }
 
@@ -595,6 +716,7 @@ export default {
         } else {
           this.status = '未启动'
         }
+        this.speechOn = false
       }
 
       rec.onspeechstart = () => {
@@ -673,5 +795,10 @@ export default {
 }
 .input-text-full .p-password-input {
   width: 100%;
+}
+</style>
+<style>
+.p-progressbar-determinate .p-progressbar-value-animate {
+  transition: width 0s ease-in-out;
 }
 </style>

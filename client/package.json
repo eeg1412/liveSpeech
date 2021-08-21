@@ -20,7 +20,8 @@
     "vue": "^3.0.0",
     "vue-clipboard3": "^1.0.1",
     "vue-router": "^4.0.0-0",
-    "vuex": "^4.0.0-0"
+    "vuex": "^4.0.0-0",
+    "worker-timers": "^7.0.37"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",
