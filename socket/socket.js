@@ -50,33 +50,37 @@ let chatList = []
 
 async function sendData (chat) {
   const data = chatList[0]
-  if (global.myAppConfig.isSpeech) {
-    let url = ''
-    switch (global.myAppConfig.cloudSel) {
-      case 'googleNiang':
-        url = await googleTTS.getAudioBase64(data.message, {
-          lang: 'zh',
-          slow: false,
-          host: 'https://translate.google.com',
-        })
-        data['voiceUrl'] = 'data:audio/mp3;base64,' + url
-        break
-      case 'googleCloud':
-        url = await quickStart(data.message)
-        data['voiceUrl'] = 'data:audio/mp3;base64,' + url
-        break
-      case 'azure':
-        url = await azuretextToSpeech(
-          global.myAppConfig.azureKey,
-          global.myAppConfig.azureRegion,
-          global.myAppConfig.azureVoice,
-          data.message
-        )
-        data['voiceUrl'] = 'data:audio/mp3;base64,' + url
-        break
-      default:
-        break
+  try {
+    if (global.myAppConfig.isSpeech) {
+      let url = ''
+      switch (global.myAppConfig.cloudSel) {
+        case 'googleNiang':
+          url = await googleTTS.getAudioBase64(data.message, {
+            lang: 'zh',
+            slow: false,
+            host: 'https://translate.google.com',
+          })
+          data['voiceUrl'] = 'data:audio/mp3;base64,' + url
+          break
+        case 'googleCloud':
+          url = await quickStart(data.message)
+          data['voiceUrl'] = 'data:audio/mp3;base64,' + url
+          break
+        case 'azure':
+          url = await azuretextToSpeech(
+            global.myAppConfig.azureKey,
+            global.myAppConfig.azureRegion,
+            global.myAppConfig.azureVoice,
+            data.message
+          )
+          data['voiceUrl'] = 'data:audio/mp3;base64,' + url
+          break
+        default:
+          break
+      }
     }
+  } catch (error) {
+    console.error(error)
   }
   chat.emit('msg', JSON.parse(JSON.stringify(data)))
   chatList = chatList.filter((item) => {

@@ -812,7 +812,7 @@ input[type='password'] {
   line-height: 35px;
 }
 .countdown-progressbar.p-progressbar-determinate .p-progressbar-value-animate {
-  transition: width 0s ease-in-out;
+  transition: width 0s ease-in-out !important;
 }
 .countdown-progressbar.p-progressbar {
   height: 5px;
