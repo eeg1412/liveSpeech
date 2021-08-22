@@ -814,6 +814,9 @@ input[type='password'] {
 .countdown-progressbar.p-progressbar-determinate .p-progressbar-value-animate {
   transition: width 0s ease-in-out !important;
 }
+.p-progressbar-determinate .p-progressbar-value-animate {
+  transition: width 0s ease-in-out !important;
+}
 .countdown-progressbar.p-progressbar {
   height: 5px;
 }

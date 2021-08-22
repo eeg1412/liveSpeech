@@ -961,8 +961,3 @@ export default {
   width: 100%;
 }
 </style>
-<style>
-.p-progressbar-determinate .p-progressbar-value-animate {
-  transition: width 0s ease-in-out;
-}
-</style>
