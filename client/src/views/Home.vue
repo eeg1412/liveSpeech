@@ -98,6 +98,32 @@
               :max="10000"
             />
           </div>
+
+          <div class="mb10">
+            <div class="pb10">
+              立即发送语音控制：<InputSwitch v-model="speedSendFlag" />
+            </div>
+            <div v-show="speedSendFlag">
+              <InputText
+                placeholder="当语音说这个词的时候就会立即发送语音"
+                v-model="speedSendText"
+                class="input-text-full"
+              />
+            </div>
+          </div>
+
+          <div class="mb10">
+            <div class="pb10">
+              删除语音控制：<InputSwitch v-model="speedDeleteFlag" />
+            </div>
+            <div v-show="speedDeleteFlag">
+              <InputText
+                placeholder="当语音说这个词的时候就会删除语音"
+                v-model="speedDeleteText"
+                class="input-text-full"
+              />
+            </div>
+          </div>
         </div>
         <div>
           <div class="mb10 mt10">
@@ -507,6 +533,13 @@ export default {
         ? Number(localStorage.getItem('sendTimeDaly'))
         : 3000,
       timeNow: new Date().getTime(),
+
+      speedSendText: localStorage.getItem('speedSendText') || '',
+      speedSendFlag:
+        localStorage.getItem('speedSendFlag') === 'true' ? true : false,
+      speedDeleteText: localStorage.getItem('speedDeleteText') || '',
+      speedDeleteFlag:
+        localStorage.getItem('speedDeleteFlag') === 'true' ? true : false,
     }
   },
   computed: {},
@@ -521,6 +554,24 @@ export default {
       console.log(v)
       localStorage.setItem('breakTime', v)
     },
+
+    speedSendFlag(v) {
+      console.log(v)
+      localStorage.setItem('speedSendFlag', v)
+    },
+    speedSendText(v) {
+      console.log(v)
+      localStorage.setItem('speedSendText', v)
+    },
+    speedDeleteFlag(v) {
+      console.log(v)
+      localStorage.setItem('speedDeleteFlag', v)
+    },
+    speedDeleteText(v) {
+      console.log(v)
+      localStorage.setItem('speedDeleteText', v)
+    },
+
     sendList: {
       handler(v) {
         console.log(v)
@@ -835,9 +886,34 @@ export default {
         console.log(`speechOn: ${this.speechOn}`)
         if (this.getType === '1') {
           if (this.speechOn) {
+            this.speechOn = false
+            const firstSend = this.sendList[0]
+            if (this.speedSendFlag) {
+              // 快速发送判断
+              if (
+                transcript.replace(/[，。.,/#!$%^&*;:{}=\-_`~()]/g, '') ===
+                this.speedSendText
+              ) {
+                if (firstSend) {
+                  this.quickSend(firstSend)
+                }
+                return false
+              }
+            }
+            if (this.speedDeleteFlag) {
+              // 快速删除判断
+              if (
+                transcript.replace(/[，。.,/#!$%^&*;:{}=\-_`~()]/g, '') ===
+                this.speedDeleteText
+              ) {
+                if (firstSend) {
+                  this.deleteMessage(firstSend.id)
+                }
+                return false
+              }
+            }
             // this.message = transcript
             this.addToSendList(transcript)
-            this.speechOn = false
           }
         } else {
           // this.message = transcript
