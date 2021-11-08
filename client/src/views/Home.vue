@@ -310,6 +310,40 @@
                 />
               </div>
             </div>
+            <div class="pb15">
+              <div class="pb10">语速({{ azureRate }}%)：</div>
+              <div>
+                <InputNumber
+                  v-model.number="azureRate"
+                  showButtons
+                  buttonLayout="horizontal"
+                  :step="1"
+                  incrementButtonIcon="pi pi-plus"
+                  decrementButtonIcon="pi pi-minus"
+                  :min="10"
+                  :max="300"
+                />
+              </div>
+            </div>
+            <div class="pb15">
+              <div class="pb10">
+                语调({{
+                  azurePitch > 0 ? `+${azurePitch}` : `${azurePitch}`
+                }}Hz)：
+              </div>
+              <div>
+                <InputNumber
+                  v-model.number="azurePitch"
+                  showButtons
+                  buttonLayout="horizontal"
+                  :step="1"
+                  incrementButtonIcon="pi pi-plus"
+                  decrementButtonIcon="pi pi-minus"
+                  :min="-200"
+                  :max="200"
+                />
+              </div>
+            </div>
           </div>
           <div v-show="cloudSel === 'googleCloud'">
             <div class="pb15">
@@ -508,6 +542,8 @@ export default {
       azureKey: '',
       azureRegion: '',
       azureVoice: 'zh-CN-XiaoxiaoNeural',
+      azureRate: 100,
+      azurePitch: 0,
       selModel: 'LiveroiD_A-Y01',
       timer: null,
       voiceTimer: null,
@@ -687,6 +723,8 @@ export default {
         azureKey: this.azureKey,
         azureRegion: this.azureRegion,
         azureVoice: this.azureVoice,
+        azureRate: this.azureRate,
+        azurePitch: this.azurePitch,
         selModel: this.selModel,
       }
       this.socket.emit('settingData', settingData)
@@ -727,6 +765,8 @@ export default {
           azureKey: this.azureKey,
           azureRegion: this.azureRegion,
           azureVoice: this.azureVoice,
+          azureRate: this.azureRate,
+          azurePitch: this.azurePitch,
           selModel: this.selModel,
         }
         this.socket.emit('settingData', settingData)
@@ -985,6 +1025,8 @@ export default {
         this.azureKey = settingData.azureKey || ''
         this.azureRegion = settingData.azureRegion || ''
         this.azureVoice = settingData.azureVoice || 'zh-CN-XiaoxiaoNeural'
+        this.azureRate = settingData.azureRate || 1
+        this.azurePitch = settingData.azurePitch || 0
         this.selModel = settingData.selModel || 'LiveroiD_A-Y01'
       }
       this.avatarPre = this.avatar

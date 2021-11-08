@@ -3,6 +3,22 @@ const { Buffer } = require('buffer')
 const { PassThrough } = require('stream')
 const fs = require('fs')
 
+const escapeHTML = (text) => {
+  var replacement = function (ch) {
+    var characterReference = {
+      '"': '&quot;',
+      '&': '&amp;',
+      "'": '&#39;',
+      '<': '&lt;',
+      '>': '&gt;',
+    }
+
+    return characterReference[ch]
+  }
+
+  return text.replace(/["&'<>]/g, replacement)
+}
+
 /**
  * Node.js server code to convert text to speech
  * @returns stream
@@ -24,9 +40,18 @@ const azuretextToSpeech = async (key, region, voice, text, filename) => {
     }
 
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig)
+    let ssmlTem = fs.readFileSync('./utils/azureSSML.xml', 'utf8')
+    const { azureRate, azurePitch } = global.myAppConfig
+    ssmlTem = ssmlTem.replace('{{azureRate}}', azureRate / 100)
+    ssmlTem = ssmlTem.replace('{{azureVoice}}', voice)
+    ssmlTem = ssmlTem.replace(
+      '{{azurePitch}}',
+      azurePitch > 0 ? `+${azurePitch}Hz` : `${azurePitch}Hz`
+    )
+    ssmlTem = ssmlTem.replace('{{azureText}}', escapeHTML(text))
 
-    synthesizer.speakTextAsync(
-      text,
+    synthesizer.speakSsmlAsync(
+      ssmlTem,
       (result) => {
         const { audioData } = result
 

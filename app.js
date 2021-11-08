@@ -17,6 +17,8 @@ global.myAppConfig = {
   azureKey: '',
   azureRegion: '',
   azureVoice: 'zh-CN-XiaoxiaoNeural',
+  azureRate: 100,
+  azurePitch: 0,
   selModel: 'LiveroiD_A-Y01',
 }
 var apiRouter = require('./routes/api')
