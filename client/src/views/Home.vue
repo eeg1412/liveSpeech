@@ -1025,7 +1025,7 @@ export default {
         this.azureKey = settingData.azureKey || ''
         this.azureRegion = settingData.azureRegion || ''
         this.azureVoice = settingData.azureVoice || 'zh-CN-XiaoxiaoNeural'
-        this.azureRate = settingData.azureRate || 1
+        this.azureRate = settingData.azureRate || 100
         this.azurePitch = settingData.azurePitch || 0
         this.selModel = settingData.selModel || 'LiveroiD_A-Y01'
       }
