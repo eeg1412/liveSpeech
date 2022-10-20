@@ -63,7 +63,9 @@ const azuretextToSpeech = async (key, region, voice, text, filename) => {
           resolve(audioFile)
         } else {
           // return stream from memory
-          const data = Buffer.from(audioData).toString('base64')
+          const bufferData = Buffer.from(audioData)
+          const data = bufferData.toString('base64')
+          fs.createWriteStream(`./audioFile/${text.replace(/[\ |\~|\`|\!|\@|\#|\$|\%|\^|\&|\*|\(|\)|\-|\_|\+|\=|\||\\|\[|\]|\{|\}|\;|\:|\"|\'|\,|\<|\.|\>|\/|\?]/g, "")}.mp3`).write(bufferData)
           resolve(data)
         }
       },
