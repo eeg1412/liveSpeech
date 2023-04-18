@@ -4,6 +4,45 @@
     <ConfirmDialog></ConfirmDialog>
     <!-- <div>头像URL：<input v-model="avatar" @blur="changeAvatar" /></div> -->
     <Panel header="语音获取" class="mb15">
+      <!-- 选择语言 -->
+      <div class="pb15">
+        <div class="pb10">捕获语言：</div>
+        <div class="flex">
+          <div class="mr10">
+            <label
+              ><RadioButton
+                name="lang"
+                value="zh-cmn-Hans"
+                v-model="speechLang"
+                @change="speechLangChange"
+              />
+              中文</label
+            >
+          </div>
+          <div class="mr10">
+            <label
+              ><RadioButton
+                name="lang"
+                value="en-US"
+                v-model="speechLang"
+                @change="speechLangChange"
+              />
+              英文</label
+            >
+          </div>
+          <div class="mr10">
+            <label
+              ><RadioButton
+                name="lang"
+                value="ja-JP"
+                v-model="speechLang"
+                @change="speechLangChange"
+              />
+              日语</label
+            >
+          </div>
+        </div>
+      </div>
       <div class="pb15">
         <div class="pb10">捕获模式：</div>
         <div class="flex">
@@ -512,6 +551,7 @@ export default {
       socket: null,
       status: '未启动',
       getType: '0',
+      speechLang: localStorage.getItem('speechLang') || 'zh-cmn-Hans',
       cloudList: [
         {
           name: '谷歌娘(仅海外)',
@@ -907,7 +947,7 @@ export default {
       this.rec = rec
       rec.continuous = true
       rec.interimResults = false
-      rec.lang = 'cmn-Hans-CN'
+      rec.lang = this.speechLang
 
       rec.onresult = (e) => {
         console.log('on result')
@@ -1032,6 +1072,12 @@ export default {
       this.avatarPre = this.avatar
       this.toSocket()
       this.initSpeech()
+    },
+    speechLangChange() {
+      this.rec.stop()
+      this.rec.lang = this.speechLang
+      localStorage.setItem('speechLang', this.speechLang)
+      this.getTypeChange()
     },
   },
   created() {},
