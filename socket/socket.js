@@ -9,8 +9,13 @@ const fs = require('fs')
 const util = require('util')
 
 const chatGPTMessagelist = []
-const getChatGPTMessage = async (message, chat) => {
-  let newMessage = global.myAppConfig.chatGPTTips || ''
+const getChatGPTMessage = async (message, chat, isComment) => {
+  let newMessage = ''
+  if (isComment) {
+    newMessage = global.myAppConfig.chatGPTReplyTips || ''
+  } else {
+    newMessage = global.myAppConfig.chatGPTTips || ''
+  }
   newMessage = newMessage.replace('${comment}', message)
   console.log(newMessage)
   const payload = {
@@ -75,6 +80,7 @@ function deleteSystemSetting (setting) {
   delete obj.azureRegion
   delete obj.chatGPTKey
   delete obj.chatGPTTips
+  delete obj.chatGPTReplyTips
   // console.log(obj)
   return obj
 }
@@ -162,10 +168,10 @@ module.exports = (io) => {
       chat.emit('getMessageListId', data)
     })
     // toChatGPTMessage
-    socket.on('toChatGPTMessage', (data) => {
+    socket.on('toChatGPTMessage', (data, isComment) => {
       console.log('toChatGPTMessage')
       console.log(data)
-      getChatGPTMessage(data, chat)
+      getChatGPTMessage(data, chat, isComment)
     })
   })
 }

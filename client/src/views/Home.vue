@@ -500,6 +500,35 @@
           <div>${comment}为描述内容</div>
         </div>
       </div>
+      <!-- 评论自动回复 -->
+      <div class="pb15">
+        <div class="pb10">评论自动回复开关：</div>
+        <div>
+          <!-- InputSwitch -->
+          <InputSwitch v-model="chatGPTComment" />
+        </div>
+      </div>
+      <Panel header="哔哩哔哩自动回复设置" class="mb15" v-show="chatGPTComment">
+        <!-- 房间ID InputText -->
+        <div class="pb15">
+          <div class="pb10">房间ID：</div>
+          <div>
+            <InputText class="input-text-full" v-model.number="bilibiRoomId" />
+          </div>
+        </div>
+        <!-- 回复提示语句 -->
+        <div class="pb15">
+          <div class="pb10">回复提示语句：</div>
+          <div>
+            <Textarea
+              class="input-text-full"
+              rows="5"
+              v-model="chatGPTReplyTips"
+            />
+            <div>${comment}为描述内容</div>
+          </div>
+        </div>
+      </Panel>
       <Button label="发送设置" class="p-button-sm" @click="saveSetting" />
     </Panel>
     <Panel header="获取地址">
@@ -558,6 +587,7 @@ import ProgressBar from 'primevue/progressbar'
 import Slider from 'primevue/slider'
 import ConfirmDialog from 'primevue/confirmdialog'
 import Textarea from 'primevue/textarea'
+import ChatClientDirect from '@/utils/bilibili'
 
 export default {
   name: 'Home',
@@ -641,6 +671,13 @@ export default {
       chatGPTKey: '',
       chatGPTTips: '',
       chatGPTLiver: false,
+      chatGPTReplyTips: '',
+      chatGPTComment: false,
+
+      bilibiRoomId: localStorage.getItem('bilibiRoomId')
+        ? Number(localStorage.getItem('bilibiRoomId'))
+        : null,
+      chatClient: null,
     }
   },
   computed: {},
@@ -671,6 +708,10 @@ export default {
     speedDeleteText(v) {
       console.log(v)
       localStorage.setItem('speedDeleteText', v)
+    },
+    bilibiRoomId(v) {
+      console.log(v)
+      localStorage.setItem('bilibiRoomId', v)
     },
 
     sendList: {
@@ -793,7 +834,9 @@ export default {
         selModel: this.selModel,
         chatGPTKey: this.chatGPTKey,
         chatGPTTips: this.chatGPTTips,
+        chatGPTReplyTips: this.chatGPTReplyTips,
         chatGPTLiver: this.chatGPTLiver,
+        chatGPTComment: this.chatGPTComment,
       }
       this.socket.emit('settingData', settingData)
       this.$toast.add({
@@ -803,6 +846,7 @@ export default {
         life: 3000,
       })
       localStorage.setItem('liveSpeechSetting', JSON.stringify(settingData))
+      this.initChatClient()
     },
     sendByUser() {
       if (this.message === '') {
@@ -838,7 +882,9 @@ export default {
           selModel: this.selModel,
           chatGPTKey: this.chatGPTKey,
           chatGPTTips: this.chatGPTTips,
+          chatGPTReplyTips: this.chatGPTReplyTips,
           chatGPTLiver: this.chatGPTLiver,
+          chatGPTComment: this.chatGPTComment,
         }
         this.socket.emit('settingData', settingData)
         this.socket.on('getControlSpeech', (data) => {
@@ -918,7 +964,7 @@ export default {
         console.log('已断开')
       })
     },
-    addToSendList(message, isChatGPTMessage) {
+    addToSendList(message, isChatGPTMessage, isComment) {
       console.log(message)
       if (
         this.chatGPTLiver &&
@@ -926,7 +972,7 @@ export default {
         message.trim() !== '' &&
         !isChatGPTMessage
       ) {
-        this.socket.emit('toChatGPTMessage', message)
+        this.socket.emit('toChatGPTMessage', message, isComment)
       } else {
         this.sendList.push({
           id:
@@ -1115,7 +1161,9 @@ export default {
         this.selModel = settingData.selModel || 'LiveroiD_A-Y01'
         this.chatGPTKey = settingData.chatGPTKey || ''
         this.chatGPTTips = settingData.chatGPTTips || ''
+        this.chatGPTReplyTips = settingData.chatGPTReplyTips || ''
         this.chatGPTLiver = settingData.chatGPTLiver || false
+        this.chatGPTComment = settingData.chatGPTComment || false
       }
       this.avatarPre = this.avatar
       this.toSocket()
@@ -1127,11 +1175,35 @@ export default {
       localStorage.setItem('speechLang', this.speechLang)
       this.getTypeChange()
     },
+    // bilibili
+    initChatClient() {
+      if (this.bilibiRoomId && this.chatGPTLiver && this.chatGPTComment) {
+        this.chatClient = new ChatClientDirect(this.bilibiRoomId)
+        this.chatClient.onAddText = this.onAddText
+        // this.chatClient.onAddGift = this.onAddText
+        // this.chatClient.onAddMember = this.onAddText
+        // this.chatClient.onAddSuperChat = this.onAddText
+        // this.chatClient.onDelSuperChat = this.onAddText
+        // this.chatClient.onUpdateTranslation = this.onAddText
+        this.chatClient.start()
+      } else if (this.chatClient !== null) {
+        this.chatClient.stop()
+        this.chatClient = null
+      }
+    },
+    onAddText(data) {
+      console.log(data)
+      const content = data?.content
+      if (content) {
+        this.addToSendList(content, false, true)
+      }
+    },
   },
   created() {},
   mounted() {
     this.init()
     this.initTime()
+    this.initChatClient()
     this.$confirm.require({
       message: '点击获取权限！',
       header: '欢迎使用',
