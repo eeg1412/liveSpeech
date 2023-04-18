@@ -470,6 +470,38 @@
         <Button label="发送设置" class="p-button-sm" @click="saveSetting" />
       </form>
     </Panel>
+    <Panel header="chatGPT设置" class="mb15">
+      <!-- 直播内容托管开关 -->
+      <div class="pb15">
+        <div class="pb10">直播内容托管开关：</div>
+        <div>
+          <!-- InputSwitch -->
+          <InputSwitch v-model="chatGPTLiver" />
+        </div>
+      </div>
+
+      <!-- 密钥 -->
+      <div class="pb15">
+        <div class="pb10">密钥：</div>
+        <div>
+          <Password
+            :feedback="false"
+            class="input-text-full"
+            v-model="chatGPTKey"
+            toggleMask
+          />
+        </div>
+      </div>
+      <!-- 提示语句 -->
+      <div class="pb15">
+        <div class="pb10">直播托管提示语句：</div>
+        <div>
+          <Textarea class="input-text-full" rows="5" v-model="chatGPTTips" />
+          <div>${comment}为描述内容</div>
+        </div>
+      </div>
+      <Button label="发送设置" class="p-button-sm" @click="saveSetting" />
+    </Panel>
     <Panel header="获取地址">
       <div class="pb15">
         <div class="pb10">气泡聊天窗：</div>
@@ -525,6 +557,7 @@ import AudioAPI from '../utils/AudioAPI.js'
 import ProgressBar from 'primevue/progressbar'
 import Slider from 'primevue/slider'
 import ConfirmDialog from 'primevue/confirmdialog'
+import Textarea from 'primevue/textarea'
 
 export default {
   name: 'Home',
@@ -542,6 +575,7 @@ export default {
     ProgressBar,
     Slider,
     ConfirmDialog,
+    Textarea,
   },
   data() {
     return {
@@ -554,25 +588,13 @@ export default {
       speechLang: localStorage.getItem('speechLang') || 'zh-cmn-Hans',
       cloudList: [
         {
-          name: '谷歌娘(仅海外)',
-          value: 'googleNiang',
-        },
-        {
-          name: '谷歌云(仅海外)',
-          value: 'googleCloud',
-        },
-        {
-          name: '阿里云智能语音交互',
-          value: 'aliyun',
-        },
-        {
           name: '微软Azure',
           value: 'azure',
         },
       ],
       isSpeech: false,
       avatar: '',
-      cloudSel: 'googleNiang',
+      cloudSel: 'azure',
       appkey: '',
       AccessToken: '',
       voice: 'xiaoyun',
@@ -616,6 +638,9 @@ export default {
       speedDeleteText: localStorage.getItem('speedDeleteText') || '',
       speedDeleteFlag:
         localStorage.getItem('speedDeleteFlag') === 'true' ? true : false,
+      chatGPTKey: '',
+      chatGPTTips: '',
+      chatGPTLiver: false,
     }
   },
   computed: {},
@@ -766,6 +791,9 @@ export default {
         azureRate: this.azureRate,
         azurePitch: this.azurePitch,
         selModel: this.selModel,
+        chatGPTKey: this.chatGPTKey,
+        chatGPTTips: this.chatGPTTips,
+        chatGPTLiver: this.chatGPTLiver,
       }
       this.socket.emit('settingData', settingData)
       this.$toast.add({
@@ -808,6 +836,9 @@ export default {
           azureRate: this.azureRate,
           azurePitch: this.azurePitch,
           selModel: this.selModel,
+          chatGPTKey: this.chatGPTKey,
+          chatGPTTips: this.chatGPTTips,
+          chatGPTLiver: this.chatGPTLiver,
         }
         this.socket.emit('settingData', settingData)
         this.socket.on('getControlSpeech', (data) => {
@@ -879,20 +910,34 @@ export default {
           }
         })
       })
+      // chatGPTMessage
+      this.socket.on('chatGPTMessage', (data) => {
+        this.addToSendList(data, true)
+      })
       this.socket.on('disconnect', () => {
         console.log('已断开')
       })
     },
-    addToSendList(message) {
-      this.sendList.push({
-        id:
-          String(new Date().getTime()) +
-          '-' +
-          String(Math.floor(Math.random() * 1000)),
-        message: message,
-        addTime: new Date().getTime(),
-        sendTime: new Date().getTime() + this.sendTimeDaly,
-      })
+    addToSendList(message, isChatGPTMessage) {
+      console.log(message)
+      if (
+        this.chatGPTLiver &&
+        this.chatGPTKey &&
+        message.trim() !== '' &&
+        !isChatGPTMessage
+      ) {
+        this.socket.emit('toChatGPTMessage', message)
+      } else {
+        this.sendList.push({
+          id:
+            String(new Date().getTime()) +
+            '-' +
+            String(Math.floor(Math.random() * 1000)),
+          message: message,
+          addTime: new Date().getTime(),
+          sendTime: new Date().getTime() + this.sendTimeDaly,
+        })
+      }
     },
     doSendMessageList() {
       if (this.sendList.length > 0) {
@@ -1049,7 +1094,7 @@ export default {
         const settingData = JSON.parse(settingDataStr)
         this.isSpeech = settingData.isSpeech ? true : false
         this.avatar = settingData.avatar || ''
-        this.cloudSel = settingData.cloudSel || 'googleNiang'
+        this.cloudSel = settingData.cloudSel || 'azure'
         this.appkey = settingData.appkey || ''
         this.AccessToken = settingData.AccessToken || ''
         this.voice = settingData.voice || 'xiaoyun'
@@ -1068,6 +1113,9 @@ export default {
         this.azureRate = settingData.azureRate || 100
         this.azurePitch = settingData.azurePitch || 0
         this.selModel = settingData.selModel || 'LiveroiD_A-Y01'
+        this.chatGPTKey = settingData.chatGPTKey || ''
+        this.chatGPTTips = settingData.chatGPTTips || ''
+        this.chatGPTLiver = settingData.chatGPTLiver || false
       }
       this.avatarPre = this.avatar
       this.toSocket()

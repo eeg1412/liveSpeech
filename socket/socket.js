@@ -1,3 +1,4 @@
+const fetch = require('node-fetch');
 const googleTTS = require('google-tts-api') // CommonJS
 // Imports the Google Cloud client library
 const textToSpeech = require('@google-cloud/text-to-speech')
@@ -6,6 +7,35 @@ const { azuretextToSpeech } = require('../utils/utils')
 // Import other required libraries
 const fs = require('fs')
 const util = require('util')
+
+const chatGPTMessagelist = []
+const getChatGPTMessage = async (message, chat) => {
+  let newMessage = global.myAppConfig.chatGPTTips || ''
+  newMessage = newMessage.replace('${comment}', message)
+  console.log(newMessage)
+  const payload = {
+    "model": "gpt-3.5-turbo",
+    "messages": [{
+      "role": "user",
+      "content": newMessage
+    }]
+  };
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${global.myAppConfig.chatGPTKey ?? ""}`,
+    },
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  const json = await response.json();
+  try {
+    chat.emit('chatGPTMessage', json.choices[0].message.content)
+  } catch (error) {
+    console.error(error);
+  }
+}
 // Creates a client
 const client = new textToSpeech.TextToSpeechClient()
 async function quickStart (message) {
@@ -42,6 +72,8 @@ function deleteSystemSetting (setting) {
   const obj = JSON.parse(str)
   delete obj.azureKey
   delete obj.azureRegion
+  delete obj.chatGPTKey
+  delete obj.chatGPTTips
   // console.log(obj)
   return obj
 }
@@ -127,6 +159,12 @@ module.exports = (io) => {
     })
     socket.on('sendMessageListId', (data) => {
       chat.emit('getMessageListId', data)
+    })
+    // toChatGPTMessage
+    socket.on('toChatGPTMessage', (data) => {
+      console.log('toChatGPTMessage')
+      console.log(data)
+      getChatGPTMessage(data, chat)
     })
   })
 }
