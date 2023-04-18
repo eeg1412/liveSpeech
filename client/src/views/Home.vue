@@ -1189,6 +1189,7 @@ export default {
       } else if (this.chatClient !== null) {
         this.chatClient.stop()
         this.chatClient = null
+        this.initChatClient()
       }
     },
     onAddText(data) {
