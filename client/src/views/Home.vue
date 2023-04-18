@@ -1177,6 +1177,10 @@ export default {
     },
     // bilibili
     initChatClient() {
+      if (this.chatClient !== null) {
+        this.chatClient.stop()
+        this.chatClient = null
+      }
       if (this.bilibiRoomId && this.chatGPTLiver && this.chatGPTComment) {
         this.chatClient = new ChatClientDirect(this.bilibiRoomId)
         this.chatClient.onAddText = this.onAddText
@@ -1186,10 +1190,6 @@ export default {
         // this.chatClient.onDelSuperChat = this.onAddText
         // this.chatClient.onUpdateTranslation = this.onAddText
         this.chatClient.start()
-      } else if (this.chatClient !== null) {
-        this.chatClient.stop()
-        this.chatClient = null
-        this.initChatClient()
       }
     },
     onAddText(data) {
