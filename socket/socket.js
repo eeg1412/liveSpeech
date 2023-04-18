@@ -33,6 +33,7 @@ const getChatGPTMessage = async (message, chat) => {
   try {
     chat.emit('chatGPTMessage', json.choices[0].message.content)
   } catch (error) {
+    console.log(json)
     console.error(error);
   }
 }
