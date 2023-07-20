@@ -471,15 +471,6 @@
       </form>
     </Panel>
     <Panel header="chatGPT设置" class="mb15">
-      <!-- 直播内容托管开关 -->
-      <div class="pb15">
-        <div class="pb10">直播内容托管开关：</div>
-        <div>
-          <!-- InputSwitch -->
-          <InputSwitch v-model="chatGPTLiver" />
-        </div>
-      </div>
-
       <!-- 密钥 -->
       <div class="pb15">
         <div class="pb10">密钥：</div>
@@ -490,6 +481,14 @@
             v-model="chatGPTKey"
             toggleMask
           />
+        </div>
+      </div>
+      <!-- 直播内容托管开关 -->
+      <div class="pb15">
+        <div class="pb10">直播内容托管开关：</div>
+        <div>
+          <!-- InputSwitch -->
+          <InputSwitch v-model="chatGPTLiver" />
         </div>
       </div>
       <!-- 提示语句 -->
@@ -526,6 +525,49 @@
               v-model="chatGPTReplyTips"
             />
             <div>${comment}为描述内容</div>
+          </div>
+        </div>
+      </Panel>
+      <!-- 开关 -->
+      <div class="pb15">
+          <div class="pb10">动态随机内容播报开关（每次启动需要手动开启）：</div>
+          <div>
+            <InputSwitch v-model="dynamicSwitch" />
+          </div>
+        </div>
+      <Panel header="动态随机内容播报设置" class="mb15">
+        <!-- 播报间隔时间 -->
+        <div class="pb15">
+          <div class="pb10">播报间隔时间（秒）：</div>
+          <div>
+            <InputNumber 
+              v-model.number="dynamicInterval"  
+              showButtons
+              buttonLayout="horizontal"
+              :step="1"
+              incrementButtonIcon="pi pi-plus"
+              decrementButtonIcon="pi pi-minus"
+              :min="10" />
+          </div>
+        </div>
+        
+        <!-- 播报内容 -->
+        <div class="pb15">
+          <div class="pb10">播报内容：</div>
+          <div>
+            <div v-for="(content, index) in dynamicContents" :key="index">
+              <Textarea
+                class="input-text-full"
+                rows="5"
+                v-model="dynamicContents[index]"
+              />
+              <div class="clearfix mb10">
+                <Button label="删除" class="p-button-danger p-button-sm fr" @click="removeDynamicContent(index)" />
+              </div>
+              
+            </div>
+            <Button label="添加" class="p-button-sm" @click="addDynamicContent" />
+            
           </div>
         </div>
       </Panel>
@@ -589,6 +631,7 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import Textarea from 'primevue/textarea'
 import ChatClientDirect from '@/utils/bilibili'
 
+let dynamicContentTimer = null
 export default {
   name: 'Home',
   components: {
@@ -678,6 +721,9 @@ export default {
         ? Number(localStorage.getItem('bilibiRoomId'))
         : null,
       chatClient: null,
+      dynamicContents: localStorage.getItem('dynamicContents') ? JSON.parse(localStorage.getItem('dynamicContents')) : [],
+      dynamicInterval : localStorage.getItem('dynamicInterval') ? Number(localStorage.getItem('dynamicInterval')) : 120,
+      dynamicSwitch:  false,
     }
   },
   computed: {},
@@ -712,6 +758,28 @@ export default {
     bilibiRoomId(v) {
       console.log(v)
       localStorage.setItem('bilibiRoomId', v)
+    },
+    dynamicContents: {
+      handler(newValue) {
+        console.log(newValue)
+        localStorage.setItem('dynamicContents', JSON.stringify(newValue))
+      },
+      deep: true
+    },
+    dynamicInterval (v) {
+      console.log(v)
+      this.setDynamicContentTimer()
+      localStorage.setItem('dynamicInterval', v)
+    },
+  
+    dynamicSwitch (v) {
+      console.log(v)
+      if (v) {
+        this.setDynamicContentTimer()
+      } else {
+        clearInterval(dynamicContentTimer)
+      }
+      localStorage.setItem('dynamicSwitch', v)
     },
 
     sendList: {
@@ -973,7 +1041,14 @@ export default {
         !isChatGPTMessage
       ) {
         this.socket.emit('toChatGPTMessage', message, isComment)
-      } else {
+      } else if(
+        this.chatGPTKey &&
+        this.dynamicSwitch &&
+        message.trim() !== '' &&
+        !isChatGPTMessage){
+        this.socket.emit('toChatGPTMessage', message, isComment)
+        }
+       else {
         this.sendList.push({
           id:
             String(new Date().getTime()) +
@@ -1197,6 +1272,28 @@ export default {
       const content = data?.content
       if (content) {
         this.addToSendList(content, false, true)
+      }
+    },
+    // 动态随机内容播报
+    removeDynamicContent(i) {
+      this.dynamicContents.splice(i, 1)
+    },
+    addDynamicContent () {
+      this.dynamicContents.push('')
+    },
+    setDynamicContentTimer () {
+      if (dynamicContentTimer) {
+        clearInterval(dynamicContentTimer)
+        dynamicContentTimer = null
+      }
+      if (this.dynamicContents.length > 0) {
+        dynamicContentTimer = setInterval(() => {
+          const index = Math.floor(Math.random() * this.dynamicContents.length)
+          const content = this.dynamicContents[index]
+          if (content) {
+            this.addToSendList(content, false, false)
+          }
+        }, this.dynamicInterval * 1000)
       }
     },
   },
